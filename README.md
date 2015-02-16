@@ -8,7 +8,6 @@ Relations
 
  * "AuthDB" (Redis) -> to check authentication status of user making requests
    * see https://github.com/j3k0/node-authdb
-   * ask for sample code to JC
  * "NofificationsDB"
    * store "username" -> Array of notifications (trimmed to 50)
 
@@ -21,6 +20,7 @@ Variables available for service configuration.
  * `REDIS_AUTH_PORT_6379_TCP_PORT` - Port of the AuthDB redis
  * `REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR` - IP of the AuthDB redis
  * `REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT` - Port of the AuthDB redis
+ * `API_SECRET` - Secret passcode required to send notifications
 
 AuthDB
 ------
@@ -55,6 +55,7 @@ Will retrieve all recent messages for the given user. In case no new messages ar
     {
         "id": 19,
         "date": "2014-12-01T12:40:10Z",
+        "from": "invitations/v1",
         "type": "INVITE",
         "data": { ... }
     }]
@@ -86,4 +87,8 @@ If authToken is invalid.
 ### response [401] Unauthorized
 
 If secret is invalid.
+
+### design note
+
+The value of "secret" should be equal to the `API_SECRET` environment variable.
 
