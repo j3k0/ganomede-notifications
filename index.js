@@ -28,6 +28,7 @@ else {
     // Enable restify plugins
     server.use(restify.bodyParser());
     server.use(restify.gzipResponse());
+    server.use(restify.queryParser());
 
     // Intitialize backend, add routes
     main.initialize();

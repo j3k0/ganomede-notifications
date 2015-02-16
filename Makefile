@@ -31,3 +31,17 @@ node_modules: package.json
 
 clean:
 	rm -fr node_modules
+
+docker-prepare:
+	@mkdir -p doc
+	docker-compose up -d --no-recreate redisAuth redisNotifications
+
+docker-run: docker-prepare
+	docker-compose run --rm --service-ports app make run BUNYAN_LEVEL=${BUNYAN_LEVEL}
+
+docker-test: docker-prepare
+	docker-compose run --rm app make test BUNYAN_LEVEL=${BUNYAN_LEVEL}
+
+docker-coverage: docker-prepare
+	docker-compose run --rm app make coverage
+
