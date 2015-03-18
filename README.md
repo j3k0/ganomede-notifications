@@ -1,7 +1,11 @@
 Notifications
 -------------
 
-This module allows a player to be notified of events using long-polling.
+This module allows a player to be notified of events using [long-polling](#retrieve-recent-messages-get).
+
+Notificatinos are created by other ganomede services by [posting notification](#send-a-message-post):
+
+  * [Invitations module](/api-docs/invitations.md)
 
 Relations
 ---------
