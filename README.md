@@ -7,6 +7,18 @@ Notificatinos are created by other ganomede services by [posting notification](#
 
   * [Invitations module](/api-docs/invitations.md)
 
+Notificatinos from different services will be of different `type` and will contain different `data`, but following fields will always be present in every notification:
+
+```js
+{ "id": 12,                        // Integer    Notification ID
+  "date": "2014-12-01T12:00:00Z",  // ISOString  Created at this time
+  "from": "turngame/v1",           // String     Created by this service
+
+  "type": "invitation",            // String  Notification type (depends on the service)
+  "data": {}                       // Object  Notification data (depends on the service and type)
+}
+```
+
 Relations
 ---------
 

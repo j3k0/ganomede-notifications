@@ -5,10 +5,8 @@
 #### `invitation` to play a multiplayer game.
 
 ```js
-{ "id": 12,                        // Notification ID
-  "date": "2014-12-01T12:00:00Z",  // Created at this time
-  "from": "turngame/v1",           // Created by this service
-  "type": "invitation",            // Type of notification
+{
+  "type": "invitation",   // Type of notification
   "data": {
     "action": "created",  // String representing state of the invitation
     "invitation": {}      // Object containing Invitation data (see invitations module)
