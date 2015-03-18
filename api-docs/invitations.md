@@ -1,4 +1,5 @@
-![notifications-workflow](https://cloud.githubusercontent.com/assets/886388/6689803/53fdbeb8-ccde-11e4-9e39-e1ce651ffe4d.png)
+This document describes how [Invitations module](https://github.com/j3k0/ganomede-invitations) and [Notifications module](https://github.com/j3k0/ganomede-notifications) interact with each other and their clients.
+See [#3](https://github.com/j3k0/ganomede-notifications/issues/3) for discussion.
 
 ## Notification Types
 
