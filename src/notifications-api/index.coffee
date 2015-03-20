@@ -1,12 +1,12 @@
-log = require "./log"
+log = require "../log"
 authdb = require "authdb"
 redis = require "redis"
 restify = require "restify"
 vasync = require 'vasync'
-config = require '../config'
+config = require '../../config'
+PubSub = require './pubsub'
 
 redisClient = null
-redisSubscriber = null
 authdbClient = null
 apiSecret = null
 msgQueueSize = null
@@ -190,19 +190,20 @@ initialize = (options={}) ->
     host: config.authdb.host
     port: config.authdb.port)
 
-  # configure the redis client
-  redisClient = options.redisClient ||
-    redis.createClient(config.redis.port, config.redis.host)
-
-  # configure the redis subscriber
-  # note: while in subscription mode, redis client can't send other commands,
-  #   that's why we need anther connection
-  redisSubscriber = options.redisSubscriber ||
-    redis.createClient(config.redis.port, config.redis.host)
+  # notificatinos redis pub/sub
+  pubsub = options.pubsub || new PubSub
+    publisher: redis.createClient(config.redis.port, config.redis.host)
+    subscriber: redis.createClient(config.redis.port, config.redis.host)
+    channel: config.redis.channel
 
   # notify the listeners of incoming messages
-  redisSubscriber.on "message", onMessage
-  redisSubscriber.subscribe "post"
+  pubsub.subscribe(onMessage)
+
+  # configure the redis client
+  #
+  # TODO:
+  # hide all the interaction into PubSub
+  redisClient = pubsub.pub
 
   # configure the testuser authentication token (to help with manual testing)
   if process.env.TESTUSER_AUTH_TOKEN

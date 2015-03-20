@@ -36,5 +36,10 @@
       "data-cover-never": "node_modules",
       "loader": "./node-loaders/coffee-script"
     }
+  },
+  "devDependencies": {
+    "expect.js": "^0.3.1",
+    "fakeredis": "^0.3.0",
+    "supertest": "^0.15.0"
   }
 }
