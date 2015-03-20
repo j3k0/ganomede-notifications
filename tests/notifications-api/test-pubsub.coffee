@@ -35,9 +35,8 @@ describe 'PubSub', () ->
       expect(data).to.be('some-data')
       callDone()
 
-    pubsub.pub.publish config.redis.channel, 'some-data', (err, nRecievers) ->
-      expect(err).to.be(null)
-      # expect(nRecievers).to.be(1) # this fails with FakeRedis for some reason,
-                                    # works with real one though, so w/ever...
-      callDone()
-
+    pubsub.sub.on 'subscribe', () ->
+      pubsub.pub.publish config.redis.channel, 'some-data', (err, nRecievers) ->
+        expect(err).to.be(null)
+        expect(nRecievers).to.be(1)
+        callDone()

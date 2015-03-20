@@ -19,13 +19,11 @@ class PubSub
       throw new Error 'PubSub() requires pubsub.channel to be a nonempty string'
 
   subscribe: (handler) ->
+    @sub.on('message', handler)
+
     if !@listening
       @listening = true
       @sub.subscribe(@channel)
-
-    # It seems that fake redis requires us to bind handlers
-    # after subscribe() call.
-    @sub.on('message', handler)
 
   quit: (callback) ->
     vasync.parallel
