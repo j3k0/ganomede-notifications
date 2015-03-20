@@ -1,4 +1,3 @@
-vasync = require 'vasync'
 fakeRedis = require 'fakeredis'
 expect = require 'expect.js'
 PubSub = require '../../src/notifications-api/pubsub'
@@ -14,11 +13,7 @@ describe 'PubSub', () ->
     channel: config.redis.channel
 
   before (done) ->
-    vasync.parallel
-      funcs: [
-        redis.flushdb.bind(redis),
-        redisSub.flushdb.bind(redisSub)
-      ], done
+    redis.flushdb(done)
 
   after (done) ->
     pubsub.quit(done)
