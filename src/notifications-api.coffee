@@ -97,7 +97,7 @@ getMessages = (req, res, next) ->
       if (hasData)
         redisClient.lrange username, 0, msgQueueSize - 1, (err, json) ->
           if err
-            sendError err, nex
+            sendError err, next
           else
             ret = extractMessages json, username, after
             res.send ret
@@ -154,14 +154,14 @@ postMessage = (req, res, next) ->
   # generate a new message id
   redisClient.incr "@", (err, nextId) ->
     if err
-      return sendError err, nex
+      return sendError err, next
 
     # add the message to the user's list
     log.info "creating message id #{nextId}"
     body.id = nextId
     redisClient.lpush body.to, JSON.stringify(body), (err, data) ->
       if err
-        return sendError err, nex
+        return sendError err, next
       res.send
         id: "" + nextId
 
