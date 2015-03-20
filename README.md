@@ -30,13 +30,16 @@ Relations
 Configuration
 -------------
 
-Variables available for service configuration.
+Variables available for service configuration (see [config.js](/config.js)):
 
- * `REDIS_AUTH_PORT_6379_TCP_ADDR` - IP of the AuthDB redis
- * `REDIS_AUTH_PORT_6379_TCP_PORT` - Port of the AuthDB redis
- * `REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR` - IP of the AuthDB redis
- * `REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT` - Port of the AuthDB redis
- * `API_SECRET` - Secret passcode required to send notifications
+ * `PORT`
+ * `ROUTE_PREFIX`
+ * `REDIS_AUTH_PORT_6379_TCP_ADDR` — IP of the AuthDB redis
+ * `REDIS_AUTH_PORT_6379_TCP_PORT` — Port of the AuthDB redis
+ * `REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR` — Redis notifications host
+ * `REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT` — Redis notifications port
+ * `MESSAGE_QUEUE_SIZE` — Redis notifications queue size
+ * `API_SECRET` — Secret passcode required to send notifications
 
 AuthDB
 ------

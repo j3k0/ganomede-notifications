@@ -3,12 +3,13 @@ authdb = require "authdb"
 redis = require "redis"
 restify = require "restify"
 vasync = require 'vasync'
+config = require '../config'
 
 redisClient = null
 redisSubscriber = null
 authdbClient = null
 apiSecret = null
-msgQueueSize = +process.env.MESSAGE_QUEUE_SIZE || 50
+msgQueueSize = null
 longPollDuration = 30000
 
 sendError = (err, next) ->
@@ -178,39 +179,26 @@ postMessage = (req, res, next) ->
 #
 
 initialize = (options={}) ->
-
   # configure api secret
   apiSecret = options.apiSecret || process.env.API_SECRET
 
   # configure message queue
-  if options.msgQueueSize
-    msgQueueSize = options.msgQueueSize
+  msgQueueSize = options.msgQueueSize || config.redis.queueSize
 
   # configure authdb client
-  if options.authdbClient
-    authdbClient = options.authdbClient
-  else
-    authdbClient = authdb.createClient
-      host: process.env.REDIS_AUTH_PORT_6379_TCP_ADDR || 'localhost'
-      port: process.env.REDIS_AUTH_PORT_6379_TCP_PORT || 6379
+  authdbClient = options.authdbClient || authdb.createClient(
+    host: config.authdb.host
+    port: config.authdb.port)
 
   # configure the redis client
-  if options.redisClient
-    redisClient = options.redisClient
-  else
-    redisClient = redis.createClient(
-      process.env.REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT || 6379,
-      process.env.REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR || "localhost")
+  redisClient = options.redisClient ||
+    redis.createClient(config.redis.port, config.redis.host)
 
   # configure the redis subscriber
   # note: while in subscription mode, redis client can't send other commands,
   #   that's why we need anther connection
-  if options.redisSubscriber
-    redisSubscriber = options.redisSubscriber
-  else
-    redisSubscriber = redis.createClient(
-      process.env.REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT || 6379,
-      process.env.REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR || "localhost")
+  redisSubscriber = options.redisSubscriber ||
+    redis.createClient(config.redis.port, config.redis.host)
 
   # notify the listeners of incoming messages
   redisSubscriber.on "message", onMessage
