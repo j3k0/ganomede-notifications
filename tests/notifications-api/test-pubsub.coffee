@@ -25,13 +25,13 @@ describe 'PubSub', () ->
       if n == 2
         done()
 
-    pubsub.subscribe (channel, data) ->
+    onMessage = (channel, data) ->
       expect(channel).to.be(config.redis.channel)
       expect(data).to.be('some-data')
       callDone()
 
-    pubsub.sub.on 'subscribe', () ->
-      pubsub.pub.publish config.redis.channel, 'some-data', (err, nRecievers) ->
+    pubsub.subscribe onMessage, () ->
+      pubsub.publish 'some-data', (err, nRecievers) ->
         expect(err).to.be(null)
         expect(nRecievers).to.be(1)
         callDone()

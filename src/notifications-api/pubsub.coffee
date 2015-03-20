@@ -1,4 +1,5 @@
 vasync = require 'vasync'
+log = require '../log'
 
 class PubSub
   constructor: (pubsub) ->
@@ -18,12 +19,26 @@ class PubSub
     if !@channel
       throw new Error 'PubSub() requires pubsub.channel to be a nonempty string'
 
-  subscribe: (handler) ->
+  # callback(channel, nRecievers)
+  publish: (data, callback) ->
+    @pub.publish(@channel, data, callback)
+
+  # callback(channel, count)
+  # Not sure what count is. Not sure if this is callable multiple times.
+  subscribe: (handler, callback) ->
     @sub.on('message', handler)
 
     if !@listening
       @listening = true
       @sub.subscribe(@channel)
+      if callback
+        @sub.once('subscribe', callback)
+    else
+      log.warning 'PubSub#subscribe() called multiple times. Make sure you
+                   know what you are doing!', {channel: @channel}
+
+      if callback
+        process.nextTick(callback.bind(null, @channel, 1))
 
   quit: (callback) ->
     vasync.parallel
