@@ -157,13 +157,13 @@ postMessage = (req, res, next) ->
       return sendError err, next
 
     # add the message to the user's list
-    log.info "creating message id #{nextId}"
-    body.id = nextId
+    body.id = String(nextId)
+    log.info "creating message id `#{body.id}`"
     redisClient.lpush body.to, JSON.stringify(body), (err, data) ->
       if err
         return sendError err, next
       res.send
-        id: "" + nextId
+        id: body.id
 
       # send notification to listeners
       redisClient.publish "post", body.to
@@ -178,7 +178,7 @@ postMessage = (req, res, next) ->
 # Init
 #
 
-initialize = (options={}) ->
+notificationsApi = (options={}) ->
   # configure api secret
   apiSecret = options.apiSecret || process.env.API_SECRET
 
@@ -212,12 +212,11 @@ initialize = (options={}) ->
       email: "testuser@fovea.cc"
       , (err, result) ->
 
-addRoutes = (prefix, server) ->
-  server.get "/#{prefix}/auth/:authToken/messages", authMiddleware, getMessages
-  server.post "/#{prefix}/messages", apiSecretMiddleware, postMessage
+  return (prefix, server) ->
+    server.get "/#{prefix}/auth/:authToken/messages",
+      authMiddleware, getMessages
+    server.post "/#{prefix}/messages", apiSecretMiddleware, postMessage
 
-module.exports =
-  addRoutes: addRoutes
-  initialize: initialize
+module.exports = notificationsApi
 
 # vim: ts=2:sw=2:et:
