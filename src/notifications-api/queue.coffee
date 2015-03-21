@@ -41,18 +41,54 @@ class Queue
           cb(null, id)
     ], callback
 
-  # TODO:
-  # catch JSON.parse() exceptions
-  #
   # callback(err, messages)
-  getMessages: (username, callback) ->
-    @redis.lrange username, 0, -1, (err, messages) ->
+  getMessages: (query, callback) ->
+    if (typeof query == 'string')
+      query = {username: query}
+
+    @redis.lrange query.username, 0, -1, (err, messages) ->
       if (err)
         log.error 'Queue#getMessages() failed',
           err: err,
-          username: username
+          query: query
         return callback(err)
 
-      callback null, messages.map (m) -> JSON.parse(m)
+      callback null, Queue.filter(query, messages)
+
+  @filter: (query, messages) ->
+    ret = []
+
+    try
+      # if a "after" filter has been set, only returns messages
+      # more recent than the provided id.
+      if query?.after?
+        for m in messages
+          msg = JSON.parse(m)
+          # notes:
+          #  - ids are auto-incremental
+          #  - message are ordered newest to oldest
+          # so it's valid to break when "after" has been found.
+          if msg.id == query.after
+            break
+          if msg.id
+            ret.push msg
+      else
+        # no filter, send the whole array
+        for m in messages
+          msg = JSON.parse(m)
+          if msg.id
+            ret.push msg
+    catch error
+      # ignore JSON.parse() exceptions,
+      # hopefully we parsed the most recent messages
+      if error instanceof SyntaxError
+        return log.warn 'Query.filter() faieled JSON.parse() step',
+          query: query
+          messages: messages
+          error: error
+
+      throw error
+
+    return ret
 
 module.exports = Queue

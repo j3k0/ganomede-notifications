@@ -39,8 +39,24 @@ describe 'Queue', () ->
 
         done()
 
-    it '#getMessages() returns list of user\'s messages', (done) ->
+    it '#getMessages() when provided with username,
+        returns list of that user\'s messages',
+    (done) ->
       queue.getMessages username, (err, actual) ->
         expect(err).to.be(null)
         expect(actual).to.eql(messages)
+        done()
+
+    it '#getMessages() when provided with query object containing `username`
+        and `after` returns list of that user\'s messages
+        more recent than the provided id'
+    (done) ->
+      query = {
+        username: username
+        after: messages[1].id
+      }
+
+      queue.getMessages query, (err, actual) ->
+        expect(err).to.be(null)
+        expect(actual).to.eql(messages.slice(0, 1))
         done()
