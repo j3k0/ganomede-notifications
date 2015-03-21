@@ -3,9 +3,11 @@ expect = require 'expect.js'
 fakeRedis = require 'fakeredis'
 Queue = require '../../src/notifications-api/queue'
 
+MAX_SIZE = 3
+
 describe 'Queue', () ->
   redis = fakeRedis.createClient(__filename)
-  queue = new Queue(redis)
+  queue = new Queue(redis, {maxSize: MAX_SIZE})
 
   before (done) ->
     redis.flushdb(done)
@@ -18,7 +20,7 @@ describe 'Queue', () ->
 
   describe 'Add/Get messages', () ->
     username = 'alice'
-    messageData = ['msg1', 'msg2']
+    messageData = ['msg1', 'msg2', 'msg3', 'msg4', 'msg5']
     messages = []
 
     it '#addMessage() adds message to the top of user queue and returns its id',
@@ -37,6 +39,14 @@ describe 'Queue', () ->
             id: id
             data: data
 
+        messages = messages.slice(0, MAX_SIZE)
+        done()
+
+    it '#addMessage() trims queue to queue#maxSize', (done) ->
+      queue.getMessages username, (err, actual) ->
+        expect(err).to.be(null)
+        expect(actual).to.be.an(Array)
+        expect(actual).to.have.length(MAX_SIZE)
         done()
 
     it '#getMessages() when provided with username,

@@ -2,11 +2,15 @@ vasync = require 'vasync'
 log = require '../log'
 
 class Queue
-  constructor: (redis) ->
+  constructor: (redis, options={}) ->
     @redis = redis
+    @maxRedisIndex = options.maxSize - 1 # redis' list is zero-based
 
     if !@redis
       throw new Error('Queue() requires redis client')
+
+    if !isFinite(@maxRedisIndex) || (@maxRedisIndex < 0)
+      throw new Error('Queue() requires options.maxSize to be Integer > 0')
 
   nextId: (callback) ->
     @redis.incr '@', (err, id) ->
@@ -17,8 +21,12 @@ class Queue
 
       callback(null, String(id))
 
-  # TODO:
-  # trim queue, possibly via multi()
+  _addMessage: (username, message, callback) ->
+    @redis.multi()
+      .lpush username, JSON.stringify(message)
+      .ltrim username, 0, @maxRedisIndex
+      .exec(callback)
+
   #
   # callback(err, messageId)
   addMessage: (username, message, callback) ->
@@ -26,16 +34,11 @@ class Queue
       @nextId.bind(@)
       (id, cb) =>
         message.id = id
-        log.info 'Queue#addMessage() creating new message',
-          id: message.id
-          username: username
-
-        @redis.lpush username, JSON.stringify(message), (err, newLength) ->
-          # TODO:
-          # trim list if new Length is greater than max
+        @_addMessage username, message, (err, replies) ->
           if (err)
             log.error 'Queue#addMessage() failed',
               err: err
+              replies: replies
             return cb(err)
 
           cb(null, id)
