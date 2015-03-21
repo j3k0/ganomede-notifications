@@ -59,7 +59,7 @@ describe 'Queue', () ->
 
     it '#getMessages() when provided with query object containing `username`
         and `after` returns list of that user\'s messages
-        more recent than the provided id'
+        more recent than the provided id',
     (done) ->
       query = {
         username: username
