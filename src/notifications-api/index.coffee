@@ -5,6 +5,7 @@ restify = require "restify"
 config = require '../../config'
 PubSub = require './pubsub'
 Queue = require './queue'
+LongPoll = require './long-poll'
 
 longPollDuration = 30000
 
@@ -43,7 +44,9 @@ notificationsApi = (options={}) ->
   # called when new data is available for a user
   pubsub.subscribe (channel, username) ->
     # if there's a listener, trigger it
-    callListener username, true
+    longPoll.trigger(username)
+
+  longPoll = options.longPoll || new LongPoll(longPollDuration)
 
   # configure the testuser authentication token (to help with manual testing)
   if process.env.TESTUSER_AUTH_TOKEN
@@ -78,6 +81,20 @@ notificationsApi = (options={}) ->
       return sendError(new restify.UnauthorizedError('not authorized'), next)
     next()
 
+  # Long Poll midlleware
+  longPollMiddleware = (req, res, next) ->
+    if (res.headersSent)
+      return next()
+
+    query = req.params.messagesQuery
+
+    longPoll.add query.username,
+      () ->
+        queue.getMessages query, (err, messages) ->
+          if err then sendError(err, next) else res.json(messages)
+      () ->
+        next(new restify.RequestTimeoutError)
+
   #
   # Endpoints
   #
@@ -86,7 +103,9 @@ notificationsApi = (options={}) ->
   getMessages = (req, res, next) ->
     query =
       username: req.params.user.username
-      after: +req.params.after
+
+    if req.query.hasOwnProperty('after')
+      query.after = req.query.after
 
     # load all recent messages
     queue.getMessages query, (err, messages) ->
@@ -96,50 +115,9 @@ notificationsApi = (options={}) ->
       # if there's data to send, send it right away
       if messages.length > 0
         res.json(messages)
-        return next()
 
-      # no messages. wait up to longPollDuration milliseconds for one to arrive
-      addListener query.username, (hasData) ->
-        unless hasData
-          # res.json([])
-          # return next()
-          return
-
-        queue.getMessages query, (err, messages) ->
-          if err
-            return sendError err, next
-          res.json(messages)
-          next()
-
-  # global list of listeners
-  listeners = {}
-
-  # call the listener if it exists
-  callListener = (username, hasData) ->
-    if listeners[username]
-      l = listeners[username]
-      delete listeners[username]
-      clearTimeout l.timeout
-      l.callback hasData
-
-
-  # register a listener for a given user
-  addListener = (username, callback) ->
-
-    # already an existing listener? trigger it and replace
-    callListener username, false
-
-    # setup the timout
-    timeout = setTimeout ->
-      # on timeout
-      delete listeners[username]
-      callback false
-    , longPollDuration
-
-    # store the listener
-    listeners[username] =
-      callback: callback
-      timeout: timeout
+      req.params.messagesQuery = query
+      next()
 
   # Post a new message to a user
   postMessage = (req, res, next) ->
@@ -160,7 +138,7 @@ notificationsApi = (options={}) ->
 
   return (prefix, server) ->
     server.get "/#{prefix}/auth/:authToken/messages",
-      authMiddleware, getMessages
+      authMiddleware, getMessages, longPollMiddleware
     server.post "/#{prefix}/messages", apiSecretMiddleware, postMessage
 
 module.exports = notificationsApi
