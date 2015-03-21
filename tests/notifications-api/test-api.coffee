@@ -5,6 +5,7 @@ fakeRedis = require 'fakeredis'
 fakeAuthdb = require '../fake-authdb'
 notificationsApi = require "../../src/notifications-api"
 PubSub = require "../../src/notifications-api/pubsub"
+Queue = require "../../src/notifications-api/queue"
 server = require '../../src/server'
 config = require '../../config'
 samples = require './sample-data'
@@ -20,6 +21,7 @@ endpoint = (path) ->
 describe "API", () ->
   redis = fakeRedis.createClient(__filename)
   authdb = fakeAuthdb.createClient()
+  queue = new Queue(redis, {maxSize: config.redis.queueSize})
   pubsub = new PubSub
     publisher: redis
     subscriber: fakeRedis.createClient(__filename)
@@ -32,6 +34,7 @@ describe "API", () ->
     api = notificationsApi
       authdbClient: authdb
       pubsub: pubsub
+      queue: queue
 
     api(endpoint(), server)
 
