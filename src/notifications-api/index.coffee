@@ -17,9 +17,6 @@ notificationsApi = (options={}) ->
   # Init
   #
 
-  # configure message queue
-  msgQueueSize = options.msgQueueSize || config.redis.queueSize
-
   # configure authdb client
   authdbClient = options.authdbClient || authdb.createClient(
     host: config.authdb.host
