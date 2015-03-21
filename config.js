@@ -3,6 +3,7 @@ var pkg = require("./package.json");
 module.exports = {
   port: +process.env.PORT || 8000,
   routePrefix: process.env.ROUTE_PREFIX || pkg.api,
+  longPollDurationMillis: 30000,
 
   authdb: {
     host: process.env.REDIS_AUTH_PORT_6379_TCP_ADDR || 'localhost',

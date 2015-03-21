@@ -7,8 +7,6 @@ PubSub = require './pubsub'
 Queue = require './queue'
 LongPoll = require './long-poll'
 
-longPollDuration = 30000
-
 sendError = (err, next) ->
   log.error err
   next err
@@ -46,7 +44,7 @@ notificationsApi = (options={}) ->
     # if there's a listener, trigger it
     longPoll.trigger(username)
 
-  longPoll = options.longPoll || new LongPoll(longPollDuration)
+  longPoll = options.longPoll || new LongPoll(config.longPollDurationMillis)
 
   # configure the testuser authentication token (to help with manual testing)
   if process.env.TESTUSER_AUTH_TOKEN
