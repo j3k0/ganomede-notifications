@@ -124,13 +124,17 @@ describe "API", () ->
           expect(res.body).to.eql([message])
           done()
 
-    it 'replies with HTTP 408 if users had no notifications
+    it 'replies with empty list if users had no notifications
         and haven\'t received new ones for X millis',
     (done) ->
       go()
         .get endpoint("/auth/#{samples.users.alice.token}/messages")
         .query {after: NEW_MESSAGE_ID}
-        .expect 408, done
+        .expect 200
+        .end (err, res) ->
+          expect(err).to.be(null)
+          expect(res.body).to.eql([])
+          done()
 
     it 'replies with HTTP 401 to invalid auth token', (done) ->
       go()

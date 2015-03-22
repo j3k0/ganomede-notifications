@@ -91,7 +91,7 @@ notificationsApi = (options={}) ->
         queue.getMessages query, (err, messages) ->
           if err then sendError(err, next) else res.json(messages)
       () ->
-        next(new restify.RequestTimeoutError)
+        res.json([])
 
   #
   # Endpoints
