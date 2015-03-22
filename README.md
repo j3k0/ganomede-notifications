@@ -10,7 +10,7 @@ Notificatinos are created by other ganomede services by [posting notification](#
 Notificatinos from different services will be of different `type` and will contain different `data`, but following fields will always be present in every notification:
 
 ```js
-{ "id": 12,                        // Integer    Notification ID
+{ "id": '12',                      // String    Notification ID
   "date": "2014-12-01T12:00:00Z",  // ISOString  Created at this time
   "from": "turngame/v1",           // String     Created by this service
 
