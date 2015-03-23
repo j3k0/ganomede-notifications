@@ -13,8 +13,8 @@ addRoutes = (prefix, server) ->
   aboutApi.addRoutes prefix, server
 
   # Notifications
-  notificationsApi.initialize()
-  notificationsApi.addRoutes prefix, server
+  api = notificationsApi()
+  api(prefix, server)
 
 initialize = (callback) ->
   log.info "initializing backend"

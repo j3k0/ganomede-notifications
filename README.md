@@ -1,7 +1,23 @@
 Notifications
 -------------
 
-This module allows a player to be notified of events using long-polling.
+This module allows a player to be notified of events using [long-polling](#retrieve-recent-messages-get).
+
+Notificatinos are created by other ganomede services by [posting notification](#send-a-message-post):
+
+  * [Invitations module](/api-docs/invitations.md)
+
+Notificatinos from different services will be of different `type` and will contain different `data`, but following fields will always be present in every notification:
+
+```js
+{ "id": '12',                      // String    Notification ID
+  "date": "2014-12-01T12:00:00Z",  // ISOString  Created at this time
+  "from": "turngame/v1",           // String     Created by this service
+
+  "type": "invitation",            // String  Notification type (depends on the service)
+  "data": {}                       // Object  Notification data (depends on the service and type)
+}
+```
 
 Relations
 ---------
@@ -14,13 +30,16 @@ Relations
 Configuration
 -------------
 
-Variables available for service configuration.
+Variables available for service configuration (see [config.js](/config.js)):
 
- * `REDIS_AUTH_PORT_6379_TCP_ADDR` - IP of the AuthDB redis
- * `REDIS_AUTH_PORT_6379_TCP_PORT` - Port of the AuthDB redis
- * `REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR` - IP of the AuthDB redis
- * `REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT` - Port of the AuthDB redis
- * `API_SECRET` - Secret passcode required to send notifications
+ * `PORT`
+ * `ROUTE_PREFIX`
+ * `REDIS_AUTH_PORT_6379_TCP_ADDR` — IP of the AuthDB redis
+ * `REDIS_AUTH_PORT_6379_TCP_PORT` — Port of the AuthDB redis
+ * `REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR` — Redis notifications host
+ * `REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT` — Redis notifications port
+ * `MESSAGE_QUEUE_SIZE` — Redis notifications queue size
+ * `API_SECRET` — Secret passcode required to send notifications
 
 AuthDB
 ------

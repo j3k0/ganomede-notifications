@@ -1,16 +1,13 @@
 require('coffee-script/register');
 
-var cluster = require("cluster")
-var log = require("./src/log")
-var pkg = require("./package.json");
-
-var port = +process.env.PORT || 8000;
-var routePrefix = process.env.ROUTE_PREFIX || pkg.api;
+var cluster = require("cluster");
+var log = require("./src/log");
+var config = require('./config');
 
 if (cluster.isMaster) {
 
     // master
-    log.info("running with env", process.env);
+    log.info("starting up...", {env: process.env, config: config});
     cluster.fork();
     cluster.on("disconnect", function(worker) {
         log.error("disconnect!");
@@ -22,17 +19,11 @@ else {
     // worker
     var restify = require("restify");
     var main = require("./src/main");
-
-    var server = restify.createServer();
-
-    // Enable restify plugins
-    server.use(restify.bodyParser());
-    server.use(restify.gzipResponse());
-    server.use(restify.queryParser());
+    var server = require('./src/server');
 
     // Intitialize backend, add routes
     main.initialize();
-    main.addRoutes(routePrefix, server);
+    main.addRoutes(config.routePrefix, server);
 
     // Handle uncaughtException, kill the worker
     server.on('uncaughtException', function (req, res, route, err) {
@@ -68,7 +59,7 @@ else {
     });
 
     // Start the server
-    server.listen(port, function() {
+    server.listen(config.port, function() {
         log.info(server.name + " listening at " + server.url);
     });
 }
