@@ -33,7 +33,8 @@ class LongPoll
 
   add: (key, onTrigger, onTimeout) ->
     if (@store.hasOwnProperty(key))
-      @store[key].timeout()
+      @store[key].stop()
+      setTimeout(@store[key].timeout.bind(@store[key]), @millis / 2)
 
     triggerFn = @clearBefore(key, onTrigger.bind(null, key))
     timeoutFn = @clearBefore(key, onTimeout.bind(null, key))
