@@ -119,7 +119,7 @@ notificationsApi = (options={}) ->
 
   # Post a new message to a user
   postMessage = (req, res, next) ->
-    # check that there's is all required fields
+    # check that there is all required fields
     body = req.body
     if !body.to || !body.from || !body.type || !body.data
       return sendError(new restify.InvalidContentError('invalid content'), next)
@@ -129,7 +129,7 @@ notificationsApi = (options={}) ->
       if err
         return sendError(err, next)
 
-      # notfiy user that he has a message and respond to request
+      # notify user that he has a message and respond to request
       pubsub.publish(body.to)
       res.json({id: messageId})
       next()

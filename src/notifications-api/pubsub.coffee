@@ -9,9 +9,9 @@ class PubSub
     @listening = false
 
     if !@pub
-      throw new Error 'PubSub() requires pubsub.pub to be Redis client'
+      throw new Error 'PubSub() requires pubsub.pub to be a Redis client'
     if !@sub
-      throw new Error 'PubSub() requires pubsub.sub to be Redis client'
+      throw new Error 'PubSub() requires pubsub.sub to be a Redis client'
     if @pub == @sub
       # while in subscription mode, redis client can't send other commands,
       # that's why we need anther connection

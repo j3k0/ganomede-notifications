@@ -7,7 +7,7 @@ class Queue
     @maxRedisIndex = options.maxSize - 1 # redis' list is zero-based
 
     if !@redis
-      throw new Error('Queue() requires redis client')
+      throw new Error('Queue() requires a Redis client')
 
     if !isFinite(@maxRedisIndex) || (@maxRedisIndex < 0)
       throw new Error('Queue() requires options.maxSize to be Integer > 0')
@@ -85,7 +85,7 @@ class Queue
       # ignore JSON.parse() exceptions,
       # hopefully we parsed the most recent messages
       if error instanceof SyntaxError
-        return log.warn 'Query.filter() faieled JSON.parse() step',
+        return log.warn 'Query.filter() failed JSON.parse() step',
           query: query
           messages: messages
           error: error
