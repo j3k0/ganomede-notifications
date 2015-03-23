@@ -17,7 +17,7 @@ INVALID_SECRET = 'INVALID_SECRET'
 API_SECRET = process.env.API_SECRET = 'API_SECRET'
 LP_MILLIS = 300 # if this is too low, we won't be able to put message in redis
                 # in time for testing long poll triggering on new message
-NEW_MESSAGE_ID = '2'
+NEW_MESSAGE_ID = 2
 
 endpoint = (path) ->
   return "/#{config.routePrefix}#{path || ''}"
@@ -68,7 +68,7 @@ describe "API", () ->
         .end (err, res) ->
           expect(err).to.be(null)
           expect(res.body).to.be.an(Object)
-          expect(res.body.id).to.be('1')
+          expect(res.body.id).to.be(1)
           done()
 
     it 'replies with HTTP 400 on missing API secret', (done) ->

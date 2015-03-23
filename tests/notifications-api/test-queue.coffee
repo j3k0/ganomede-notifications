@@ -15,7 +15,7 @@ describe 'Queue', () ->
   it '#nextId() returns unique String id for new message', (done) ->
     queue.nextId (err, id) ->
       expect(err).to.be(null)
-      expect(id).to.be.a('string')
+      expect(id).to.be.a('number')
       done()
 
   describe 'Add/Get messages', () ->
@@ -33,7 +33,7 @@ describe 'Queue', () ->
 
         messageData.forEach (data, idx) ->
           id = results.operations[idx].result
-          expect(id).to.be.a('string')
+          expect(id).to.be.a('number')
 
           messages.unshift
             id: id

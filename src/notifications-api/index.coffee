@@ -103,7 +103,10 @@ notificationsApi = (options={}) ->
       username: req.params.user.username
 
     if req.query.hasOwnProperty('after')
-      query.after = req.query.after
+      query.after = +req.query.after
+      if !isFinite(query.after) || query.after < 0
+        restErr = new restify.InvalidContentError('invalid content')
+        return sendError(restErr, next)
 
     # load all recent messages
     queue.getMessages query, (err, messages) ->

@@ -19,7 +19,7 @@ class Queue
           err: err
         return callback(err)
 
-      callback(null, String(id))
+      callback(null, id)
 
   _addMessage: (username, message, callback) ->
     @redis.multi()
