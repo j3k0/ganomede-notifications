@@ -77,6 +77,9 @@ notificationsApi = (options={}) ->
       return sendError(new restify.InvalidContentError('invalid content'), next)
     if secret != process.env.API_SECRET
       return sendError(new restify.UnauthorizedError('not authorized'), next)
+
+    # Make sure secret isn't sent in clear to the users
+    delete req.body.secret
     next()
 
   # Long Poll midlleware
