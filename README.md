@@ -6,6 +6,7 @@ This module allows a player to be notified of events using [long-polling](#retri
 Notificatinos are created by other ganomede services by [posting notification](#send-a-message-post):
 
   * [Invitations module](/api-docs/invitations.md)
+  * [Turngame module](/api-docs/turngame.md)
 
 Notificatinos from different services will be of different `type` and will contain different `data`, but following fields will always be present in every notification:
 
