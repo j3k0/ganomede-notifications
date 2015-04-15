@@ -130,14 +130,20 @@ notificationsApi = (options={}) ->
     if !body.to || !body.from || !body.type || !body.data
       return sendError(new restify.InvalidContentError('invalid content'), next)
 
+    body.timestamp = Date.now()
+
     # add the message to the user's list
     queue.addMessage body.to, body, (err, messageId) ->
       if err
         return sendError(err, next)
 
+      reply =
+        id: messageId
+        timestamp: body.timestamp
+
       # notify user that he has a message and respond to request
       pubsub.publish(body.to)
-      res.json({id: messageId})
+      res.json(reply)
       next()
 
   return (prefix, server) ->

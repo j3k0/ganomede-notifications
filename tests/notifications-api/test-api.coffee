@@ -60,7 +60,7 @@ describe "API", () ->
       ], done
 
   describe 'POST /messages', () ->
-    it 'creates message and replies with its ID', (done) ->
+    it 'creates message and replies with its ID and timestamp', (done) ->
       go()
         .post endpoint('/messages')
         .send samples.notification(API_SECRET)
@@ -69,6 +69,7 @@ describe "API", () ->
           expect(err).to.be(null)
           expect(res.body).to.be.an(Object)
           expect(res.body.id).to.be(1)
+          expect(res.body).to.have.property('timestamp')
           done()
 
     it 'replies with HTTP 400 on missing API secret', (done) ->
@@ -99,7 +100,12 @@ describe "API", () ->
           expect(err).to.be(null)
           expect(res.body).to.be.an(Array)
           expect(res.body).to.have.length(1)
-          helpers.expectToEqlExceptIdSecret(res.body[0], samples.notification())
+
+          actual = res.body[0]
+          expected = samples.notification()
+
+          expect(actual).to.have.property('timestamp')
+          helpers.expectToEqlExceptIdSecretTimestamp(actual, expected)
           done()
 
     it 'replies with user\'s notifications if user had no notifications,
