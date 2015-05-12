@@ -10,9 +10,9 @@ Notificatinos are created by other ganomede services by [posting notification](#
 Notificatinos from different services will be of different `type` and will contain different `data`, but following fields will always be present in every notification:
 
 ```js
-{ "id": '12',                      // String    Notification ID
-  "date": "2014-12-01T12:00:00Z",  // ISOString  Created at this time
-  "from": "turngame/v1",           // String     Created by this service
+{ "id": '12',                  // String       Notification ID
+  "timestamp": 1429084002258,  // JSTimestmap  Created at this time
+  "from": "turngame/v1",       // String       Created by this service
 
   "type": "invitation",            // String  Notification type (depends on the service)
   "data": {}                       // Object  Notification data (depends on the service and type)
@@ -66,14 +66,14 @@ Will retrieve all recent messages for the given user. In case no new messages ar
 
     [{
         "id": 12,
-        "date": "2014-12-01T12:00:00Z",
+        "timestamp": 1429084002258,
         "from": "turngame/v1",
         "type": "MOVE",
         "data": { ... }
     },
     {
         "id": 19,
-        "date": "2014-12-01T12:40:10Z",
+        "timestamp": 1429084002258,
         "from": "invitations/v1",
         "type": "INVITE",
         "data": { ... }
@@ -101,6 +101,7 @@ If authToken is invalid.
 
     {
         "id": 12
+        "timestamp": 1429084002258
     }
 
 ### response [401] Unauthorized
