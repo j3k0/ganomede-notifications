@@ -40,6 +40,7 @@ Variables available for service configuration (see [config.js](/config.js)):
  * `REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR` — Redis notifications host
  * `REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT` — Redis notifications port
  * `MESSAGE_QUEUE_SIZE` — Redis notifications queue size
+ * `ONLINE_LIST_SIZE` — Redis list size with users most recently online
  * `API_SECRET` — Secret passcode required to send notifications
 
 AuthDB
@@ -112,4 +113,22 @@ If secret is invalid.
 ### design note
 
 The value of "secret" should be equal to the `API_SECRET` environment variable.
+
+# Online User List [/notifications/v1/online]
+
+Every time client sends request for retrieving messages for a particular user, that user is added to a top of the list of recently online users in Redis.
+
+List is trimmed at `ONLINE_LIST_SIZE` most recent users.
+
+## Retrive List [GET]
+
+Will return a list of usernames of most recently online users. This list is publicly available (no `API_SECRET` or auth required).
+
+### response [200] OK
+
+    [ "username",
+      "alice",
+      ...
+      "bob"
+    ]
 
