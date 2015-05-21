@@ -1,9 +1,11 @@
 log = require '../log'
 
+# Stores list of users most recently online.
+# Uses Redis' sorted set with score -timestamp of request.
 class OnlineList
   constructor: (redis, options={}) ->
     @redis = redis
-    @maxRedisIndex = options.maxSize - 1
+    @maxRedisIndex = options.maxSize
     @key = options.key || 'online-list'
 
     if !@redis
@@ -13,9 +15,11 @@ class OnlineList
       throw new Error('OnlineList() requires options.maxSize to be Integer > 0')
 
   _add: (username, callback) ->
+    # add user or update his position
+    # remove oldest users
     @redis.multi()
-      .lpush(@key, username)
-      .ltrim(@key, 0, @maxRedisIndex)
+      .zadd(@key, -Date.now(), username)
+      .zremrangebyrank(@key, @maxRedisIndex, -1)
       .exec(callback)
 
   add: (username, callback) ->
@@ -28,7 +32,7 @@ class OnlineList
       callback(err)
 
   get: (callback) ->
-    @redis.lrange @key, 0, -1, (err, list) ->
+    @redis.zrange @key, 0, -1, (err, list) ->
       if (err)
         log.error 'OnlineList failed to retrieve list', {err: err}
 

@@ -6,6 +6,8 @@ OnlineList = require '../../src/notifications-api/online-list'
 TEST_LIST = ['alice', 'bob', 'jdoe']
 TEST_MAX_SIZE = TEST_LIST.length
 
+delay = (ms, fn) -> setTimeout(fn, ms)
+
 clone = (obj) -> JSON.parse(JSON.stringify(obj))
 
 reverseArray = (arr) ->
@@ -28,44 +30,75 @@ describe 'OnlineList', () ->
   # (resulting online list is reversed).
   initList = (callback) ->
     vasync.forEachPipeline
-      func: list.add.bind(list)
+      # have to setTimeout so SET is sorted in predictable order.
+      func: (username, cb) -> delay(1, list.add.bind(list, username, cb))
       inputs: TEST_LIST
-      , callback
+    , callback
 
   getList = (callback) ->
     list.get(callback)
 
-  it 'adds users to the top of the list', (done) ->
-    initList (err) ->
-      expect(err).to.be(null)
+  getRawList = (callback) ->
+    redisClient.zrange list.key, 0, -1, callback
 
-      # Since most recent users go to the top of the list,
-      # we expect to get reversed copy of TEST_LIST.
-      getList (err, list) ->
+  describe '#add()', () ->
+    it 'adds users to the list sorted by -timestamp of request
+        (newer request first)',
+    (done) ->
+      initList (err, results) ->
         expect(err).to.be(null)
-        expect(list).to.eql(reverseArray(TEST_LIST))
-        done()
 
-  it 'trims list at options.maxSize usernames', (done) ->
-    username = 'alice-will-get-trimmed'
-    expected = reverseArray(TEST_LIST)          # initial (from #add() test)
-    expected.unshift(username)                  # add new username
-    expected = expected.slice(0, TEST_MAX_SIZE) # trim to max size
+        getRawList (err, list) ->
+          expect(err).to.be(null)
+          expect(list).to.eql(reverseArray(TEST_LIST))
+          done()
 
-    list.add username, (err) ->
-      expect(err).to.be(null)
+    it 'does not store duplicate usernames, but rather updates their score',
+    (done) ->
+      username = TEST_LIST[0]
 
-      getList (err, list) ->
+      list.add username, (err) ->
         expect(err).to.be(null)
-        expect(list).to.eql(expected)
-        done()
 
-  it 'retrives list', (done) ->
-    getList (err, wrappedList) ->
-      expect(err).to.be(null)
+        getRawList (err, list) ->
+          expect(err).to.be(null)
 
-      redisClient.lrange list.key, 0, -1, (err, rawList) ->
+          # We expect <username> to be moved to the top of the list.
+          expected = reverseArray(TEST_LIST)
+          expected.pop()              # remove from the end
+          expected.unshift(username)  # add to the top
+
+          expect(list).to.eql(expected)
+          done()
+
+    it 'trims list at options.maxSize usernames, removing oldest requests',
+    (done) ->
+      username = "#{TEST_LIST[0]}-will-get-trimmed"
+      expected = reverseArray(TEST_LIST)          # initial (from #add() test)
+      expected.unshift(username)                  # add new username
+      expected = expected.slice(0, TEST_MAX_SIZE) # trim to max size
+
+      initList (err) ->
         expect(err).to.be(null)
-        expect(wrappedList).to.have.length(TEST_MAX_SIZE)
-        expect(wrappedList).to.eql(rawList)
-        done()
+
+        list.add username, (err) ->
+          expect(err).to.be(null)
+
+          getList (err, list) ->
+            expect(err).to.be(null)
+            expect(list).to.eql(expected)
+            done()
+
+  describe '#get()', () ->
+    before (cb) ->
+      initList(cb)
+
+    it 'retrives list', (done) ->
+      getList (err, wrappedList) ->
+        expect(err).to.be(null)
+        expect(wrappedList).to.eql(reverseArray(TEST_LIST))
+
+        getRawList (err, rawList) ->
+          expect(err).to.be(null)
+          expect(wrappedList).to.eql(rawList)
+          done()
