@@ -105,6 +105,7 @@ notificationsApi = (options={}) ->
   # Adds user performing request to the top of Recently Online Users list.
   onlineListMiddleware = (req, res, next) ->
     onlineList.add req.params.user.username, (err) ->
+      log.error "onlineList.add", err
     next()
 
   #

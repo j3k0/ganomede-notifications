@@ -13,6 +13,7 @@ app:
     environment:
      - "TESTUSER_AUTH_TOKEN=DFDE4BBE-1F43-4EF0-9642-775C05336507"
      - "API_SECRET=BE295A7D-C10F-4448-9198-D5AB142E7546"
+     - "ONLINE_LIST_SIZE=50"
 
 redisAuth:
     image: tutum/redis:latest
