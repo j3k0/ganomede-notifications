@@ -1,23 +1,15 @@
 vasync = require 'vasync'
 expect = require 'expect.js'
 fakeRedis = require 'fakeredis'
-OnlineList = require '../../src/online-list/online-list'
+OnlineList = require '../../src/online-api/online-list'
+common = require './common'
 
-TEST_LIST = ['alice', 'bob', 'jdoe']
+TEST_LIST = common.TEST_LIST
 TEST_MAX_SIZE = TEST_LIST.length
 
-delay = (ms, fn) -> setTimeout(fn, ms)
-
-clone = (obj) -> JSON.parse(JSON.stringify(obj))
-
-reverseArray = (arr) ->
-  copy = clone(arr)
-  reversed = []
-
-  for item in copy
-    reversed.unshift(item)
-
-  return reversed
+delay = common.delay
+clone = common.clone
+reverseArray = common.reverseArray
 
 describe 'OnlineList', () ->
   redisClient = fakeRedis.createClient(__filename)
