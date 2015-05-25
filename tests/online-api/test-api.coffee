@@ -40,7 +40,7 @@ describe 'Online API', () ->
     # online users.
     api(config.routePrefix, server)
 
-    server.listen(1337, cb)
+    server.listen(1337, redis.flushdb.bind(redis, cb))
 
   after (cb) ->
     server.close(cb)
