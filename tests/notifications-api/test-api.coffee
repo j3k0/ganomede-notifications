@@ -33,7 +33,7 @@ describe "API", () ->
   redis = fakeRedis.createClient(__filename)
   authdb = fakeAuthdb.createClient()
   queue = new Queue(redis, {maxSize: config.redis.queueSize})
-  onlineList = new OnlineList(redis, {maxSize: config.redis.onlineSize})
+  onlineList = new OnlineList(redis, {maxSize: config.onlineList.maxSize})
   longPoll = new LongPoll(LP_MILLIS)
   pubsub = new PubSub
     publisher: redis

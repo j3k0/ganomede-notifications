@@ -42,7 +42,14 @@ notificationsApi = (options={}) ->
       queue = new Queue(client, {maxSize: config.redis.queueSize})
 
     if !onlineList
-      onlineList = new OnlineList(client, {maxSize: config.redis.onlineSize})
+      onlineListClient = redis.createClient(
+        config.onlineList.redisPort,
+        config.onlineList.redisHost
+      )
+
+      onlineList = new OnlineList(
+        onlineListClient, {maxSize: config.onlineList.maxSize}
+      )
 
   # notify the listeners of incoming messages
   # called when new data is available for a user
