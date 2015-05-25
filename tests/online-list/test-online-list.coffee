@@ -1,7 +1,7 @@
 vasync = require 'vasync'
 expect = require 'expect.js'
 fakeRedis = require 'fakeredis'
-OnlineList = require '../../src/notifications-api/online-list'
+OnlineList = require '../../src/online-list/online-list'
 
 TEST_LIST = ['alice', 'bob', 'jdoe']
 TEST_MAX_SIZE = TEST_LIST.length

@@ -6,7 +6,7 @@ config = require '../../config'
 PubSub = require './pubsub'
 Queue = require './queue'
 LongPoll = require './long-poll'
-OnlineList = require './online-list'
+OnlineList = require '../online-list/online-list'
 
 sendError = (err, next) ->
   log.error err
