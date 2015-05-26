@@ -6,7 +6,6 @@ config = require '../../config'
 PubSub = require './pubsub'
 Queue = require './queue'
 LongPoll = require './long-poll'
-OnlineList = require './online-list'
 
 sendError = (err, next) ->
   log.error err
@@ -24,10 +23,14 @@ notificationsApi = (options={}) ->
 
   # notificatinos redis pub/sub
   # notifications redis queue
-  # list of users recently online
   pubsub = options.pubsub
   queue = options.queue
-  onlineList = options.onlineList
+
+  # online-api middleware for updating online list
+  updateOnlineList = options.updateOnlineListMiddleware
+  if !updateOnlineList
+    log.warn 'options.updateOnlineListMiddleware missing, treating as noop'
+    updateOnlineList = (req, res, next) -> next()
 
   do () ->
     client = redis.createClient(config.redis.port, config.redis.host)
@@ -40,9 +43,6 @@ notificationsApi = (options={}) ->
 
     if !queue
       queue = new Queue(client, {maxSize: config.redis.queueSize})
-
-    if !onlineList
-      onlineList = new OnlineList(client, {maxSize: config.redis.onlineSize})
 
   # notify the listeners of incoming messages
   # called when new data is available for a user
@@ -102,12 +102,6 @@ notificationsApi = (options={}) ->
       () ->
         res.json([])
 
-  # Adds user performing request to the top of Recently Online Users list.
-  onlineListMiddleware = (req, res, next) ->
-    onlineList.add req.params.user.username, (err) ->
-      log.error "onlineList.add", err
-    next()
-
   #
   # Endpoints
   #
@@ -158,20 +152,10 @@ notificationsApi = (options={}) ->
       res.json(reply)
       next()
 
-  # Return list of usernames most recently online
-  onlineListEndpoint = (req, res, next) ->
-    onlineList.get (err, list) ->
-      if (err)
-        return sendError(new restify.InternalServerError(), next)
-
-      res.json(list)
-      next()
-
   return (prefix, server) ->
     server.get "/#{prefix}/auth/:authToken/messages",
-      authMiddleware, onlineListMiddleware, getMessages, longPollMiddleware
+      authMiddleware, updateOnlineList, getMessages, longPollMiddleware
     server.post "/#{prefix}/messages", apiSecretMiddleware, postMessage
-    server.get "/#{prefix}/online", onlineListEndpoint
 
 module.exports = notificationsApi
 

@@ -14,7 +14,12 @@ module.exports = {
     host: process.env.REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR || 'localhost',
     port: +process.env.REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT || 6379,
     queueSize: +process.env.MESSAGE_QUEUE_SIZE || 50,
-    onlineSize: +process.env.ONLINE_LIST_SIZE || 20,
     channel: 'post'
+  },
+
+  onlineList: {
+    redisHost: process.env.REDIS_ONLINELIST_PORT_6379_TCP_ADDR || 'localhost',
+    redisPort: +process.env.REDIS_ONLINELIST_PORT_6379_TCP_PORT || 6379,
+    maxSize: +process.env.ONLINE_LIST_SIZE || 20
   }
 };

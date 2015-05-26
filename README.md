@@ -40,8 +40,10 @@ Variables available for service configuration (see [config.js](/config.js)):
  * `REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR` — Redis notifications host
  * `REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT` — Redis notifications port
  * `MESSAGE_QUEUE_SIZE` — Redis notifications queue size
- * `ONLINE_LIST_SIZE` — Redis list size with users most recently online
  * `API_SECRET` — Secret passcode required to send notifications
+ * `ONLINE_LIST_SIZE` — Redis list size with users most recently online
+ * `REDIS_ONLINELIST_PORT_6379_TCP_ADDR` — Redis online list host
+ * `REDIS_ONLINELIST_PORT_6379_TCP_PORT` — Redis online list port
 
 AuthDB
 ------
