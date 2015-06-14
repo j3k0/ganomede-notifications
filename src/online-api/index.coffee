@@ -9,7 +9,8 @@ module.exports = (options={}) ->
   if !onlineList
     client = redis.createClient(
       config.onlineList.redisPort,
-      config.onlineList.redisHost
+      config.onlineList.redisHost,
+        no_ready_check: true
     )
 
     onlineList = new OnlineList(client, {maxSize: config.onlineList.maxSize})
