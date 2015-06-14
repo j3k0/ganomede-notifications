@@ -14,22 +14,15 @@ class OnlineList
     if !isFinite(@maxRedisIndex) || (@maxRedisIndex < 0)
       throw new Error('OnlineList() requires options.maxSize to be Integer > 0')
 
-  _add: (username, callback) ->
+  _add: (username) ->
     # add user or update his position
     # remove oldest users
-    @redis.multi()
-      .zadd(@key, -Date.now(), username)
-      .zremrangebyrank(@key, @maxRedisIndex, -1)
-      .exec(callback)
+    # remove multi, enable pipeling and proxying
+    @redis.zadd(@key, -Date.now(), username)
+    @redis.zremrangebyrank(@key, @maxRedisIndex, -1)
 
-  add: (username, callback) ->
-    @_add username, (err, replies) ->
-      if (err)
-        log.error 'OnlineList failed to add user',
-          err: err
-          replies: replies
-
-      callback(err)
+  add: (username) ->
+    @_add username
 
   get: (callback) ->
     @redis.zrange @key, 0, -1, (err, list) ->

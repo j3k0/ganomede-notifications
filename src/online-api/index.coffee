@@ -30,9 +30,7 @@ module.exports = (options={}) ->
     server.get("/#{prefix}/online", onlineListEndpoint)
 
   api.updateOnlineListMiddleware = (req, res, next) ->
-    onlineList.add req.params.user.username, (err) ->
-      if (err)
-        log.error('updateOnlineListMiddleware() failed', {err: err})
+    onlineList.add req.params.user.username
 
     next()
 
