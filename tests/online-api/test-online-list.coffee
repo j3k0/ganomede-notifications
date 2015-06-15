@@ -21,11 +21,9 @@ describe 'OnlineList', () ->
   # Adding users 1 by 1 in order defined in TEST_LIST
   # (resulting online list is reversed).
   initList = (callback) ->
-    vasync.forEachPipeline
-      # have to setTimeout so SET is sorted in predictable order.
-      func: (username, cb) -> delay(1, list.add.bind(list, username, cb))
-      inputs: TEST_LIST
-    , callback
+    for username in TEST_LIST
+      list.add username
+    callback
 
   getList = (callback) ->
     list.get(callback)
@@ -73,8 +71,9 @@ describe 'OnlineList', () ->
       initList (err) ->
         expect(err).to.be(null)
 
-        list.add username, (err) ->
-          expect(err).to.be(null)
+        list.add username
+        delay 10, ->
+          # expect(err).to.be(null)
 
           getList (err, list) ->
             expect(err).to.be(null)

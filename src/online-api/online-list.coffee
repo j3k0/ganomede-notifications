@@ -32,3 +32,4 @@ class OnlineList
       callback(err, list)
 
 module.exports = OnlineList
+# vim: ts=2:sw=2:et:

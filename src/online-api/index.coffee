@@ -3,7 +3,7 @@ OnlineList = require './online-list'
 config = require '../../config'
 log = require '../log'
 
-module.exports = (options={}) ->
+createApi = (options={}) ->
   onlineList = options.onlineList
 
   if !onlineList
@@ -27,12 +27,32 @@ module.exports = (options={}) ->
       res.json(list)
       next()
 
-  api = (prefix, server) ->
+  # Some players should stay invisible
+  invisibleMatch = options.invisibleMatch ||
+    process.env.ONLINE_LIST_INVISIBLE_MATCH
+  isInvisible = options.isInvisible
+  if !isInvisible
+    if invisibleMatch
+      isInvisible = (username) ->
+        username.match(invisibleMatch)
+    else
+      isInvisible = -> false
+
+  api = {}
+  
+  api.addRoutes = (prefix, server) ->
     server.get("/#{prefix}/online", onlineListEndpoint)
 
+  # Update the list of online players
   api.updateOnlineListMiddleware = (req, res, next) ->
-    onlineList.add req.params.user.username
-
+    username = req.params?.user?.username
+    if username and !isInvisible username
+      onlineList.add username
     next()
 
   return api
+
+module.exports =
+  createApi: createApi
+
+# vim: ts=2:sw=2:et:

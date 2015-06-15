@@ -14,8 +14,8 @@ addRoutes = (prefix, server) ->
   aboutApi.addRoutes prefix, server
   
   # Online list
-  onlineApi = onlineApiLib()
-  onlineApi(prefix, server)
+  onlineApi = onlineApiLib.createApi()
+  onlineApi.addRoutes prefix, server
 
   # Notifications
   api = notificationsApi(

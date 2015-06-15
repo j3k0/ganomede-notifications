@@ -1,7 +1,7 @@
 vasync = require 'vasync'
 expect = require 'expect.js'
 supertest = require 'supertest'
-fakeRedis = require 'fakeRedis'
+fakeRedis = require 'fakeredis'
 onlineApi = require '../../src/online-api'
 OnlineList = require '../../src/online-api/online-list'
 server = require '../../src/server'
@@ -18,7 +18,8 @@ describe 'Online API', () ->
   onlineList = new OnlineList(redis, {maxSize: 5})
 
   before (cb) ->
-    api = onlineApi(onlineList: onlineList)
+    api = onlineApi.createApi
+      onlineList: onlineList
 
     # This allows us to add user to an onlie list.
     server.get endpoint('/i-am-online/:username'),
@@ -38,7 +39,7 @@ describe 'Online API', () ->
 
     # This sets up /online endpoint that returns list of recently
     # online users.
-    api(config.routePrefix, server)
+    api.addRoutes config.routePrefix, server
 
     server.listen(1337, redis.flushdb.bind(redis, cb))
 
@@ -76,3 +77,5 @@ describe 'Online API', () ->
           expect(err).to.be(null)
           expect(res.body).to.eql(common.reverseArray(common.TEST_LIST))
           done()
+
+# vim: ts=2:sw=2:et:
