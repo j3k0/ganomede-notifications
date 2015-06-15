@@ -34,7 +34,7 @@ createApi = (options={}) ->
   if !isInvisible
     if invisibleMatch
       isInvisible = (email) ->
-        username.match(invisibleMatch)
+        email.match(invisibleMatch)
     else
       isInvisible = -> false
 
