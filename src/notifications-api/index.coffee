@@ -113,7 +113,8 @@ notificationsApi = (options={}) ->
 
     if req.query.hasOwnProperty('after')
       query.after = +req.query.after
-      if !isFinite(query.after) || query.after < 0
+      if !isFinite(query.after)
+        # || query.after < 0 (negative "after" allows to retrieve all message)
         restErr = new restify.InvalidContentError('invalid content')
         return sendError(restErr, next)
 
@@ -123,7 +124,8 @@ notificationsApi = (options={}) ->
         return sendError err, next
 
       # if there's data to send, send it right away
-      if messages.length > 0
+      # also happens with special value after = -2
+      if messages.length > 0 or query.after == -2
         res.json(messages)
 
       req.params.messagesQuery = query
