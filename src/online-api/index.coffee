@@ -33,7 +33,7 @@ createApi = (options={}) ->
   isInvisible = options.isInvisible
   if !isInvisible
     if invisibleMatch
-      isInvisible = (username) ->
+      isInvisible = (email) ->
         username.match(invisibleMatch)
     else
       isInvisible = -> false
@@ -46,7 +46,8 @@ createApi = (options={}) ->
   # Update the list of online players
   api.updateOnlineListMiddleware = (req, res, next) ->
     username = req.params?.user?.username
-    if username and !isInvisible username
+    email = req.params?.user?.email
+    if username and email and !isInvisible email
       onlineList.add username
     next()
 
