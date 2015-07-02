@@ -135,3 +135,13 @@ Will return a list of usernames of most recently online users. This list is publ
       "bob"
     ]
 
+# Online status [/auth/:authToken/online]
+
+A user is online.
+
+## Set as online [POST]
+
+### response [200] OK
+
+    { "ok": true }
+
