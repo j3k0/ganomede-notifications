@@ -94,7 +94,7 @@ describe 'Online API', () ->
         .expect 200
         .end (err, res) ->
           expect(err).to.be(null)
-          expect(res.body).to.eql(ok:true)
+          expect(res.body).to.eql([ 'jdoe', 'bob', 'alice' ])
           done()
 
 # vim: ts=2:sw=2:et:

@@ -123,7 +123,7 @@ Every time client sends request for retrieving messages for a particular user, t
 
 List is trimmed at `ONLINE_LIST_SIZE` most recent users.
 
-## Retrive List [GET]
+## Retrieve List [GET]
 
 Will return a list of usernames of most recently online users. This list is publicly available (no `API_SECRET` or auth required).
 
@@ -137,11 +137,18 @@ Will return a list of usernames of most recently online users. This list is publ
 
 # Online status [/auth/:authToken/online]
 
-A user is online.
+User is online.
 
 ## Set as online [POST]
 
+Add user to the list of online players, returns the list.
+
 ### response [200] OK
 
-    { "ok": true }
+    [
+      "username",
+      "alice",
+      ...
+      "bob"
+    ]
 

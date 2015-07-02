@@ -82,17 +82,16 @@ createApi = (options={}) ->
       res.json(list)
       next()
 
-  # Update the list of online players
-  postOnline = (req, res, next) ->
-    res.json ok:true
-    next()
-
   api = {}
   
   api.addRoutes = (prefix, server) ->
+
+    # Get random list on online users
     server.get("/#{prefix}/online", getOnlineList)
+ 
+    # Sets the player as online, return list of online users
     server.post("/#{prefix}/auth/:authToken/online",
-      authMiddleware, updateOnlineListMiddleware, postOnline)
+      authMiddleware, updateOnlineListMiddleware, getOnlineList)
 
   # Export the updateOnlineList middleware
   api.updateOnlineListMiddleware = updateOnlineListMiddleware
