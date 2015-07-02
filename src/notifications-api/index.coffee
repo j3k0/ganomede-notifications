@@ -26,12 +26,6 @@ notificationsApi = (options={}) ->
   pubsub = options.pubsub
   queue = options.queue
 
-  # online-api middleware for updating online list
-  updateOnlineList = options.updateOnlineListMiddleware
-  if !updateOnlineList
-    log.warn 'options.updateOnlineListMiddleware missing, treating as noop'
-    updateOnlineList = (req, res, next) -> next()
-
   do () ->
     client = redis.createClient(config.redis.port, config.redis.host)
 
@@ -156,7 +150,7 @@ notificationsApi = (options={}) ->
 
   return (prefix, server) ->
     server.get "/#{prefix}/auth/:authToken/messages",
-      authMiddleware, updateOnlineList, getMessages, longPollMiddleware
+      authMiddleware, getMessages, longPollMiddleware
     server.post "/#{prefix}/messages", apiSecretMiddleware, postMessage
 
 module.exports = notificationsApi

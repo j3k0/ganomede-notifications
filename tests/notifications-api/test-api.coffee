@@ -35,12 +35,6 @@ describe "Notifications API", () ->
     subscriber: fakeRedis.createClient(__filename)
     channel: config.redis.channel
 
-  updateOnlineListMiddleware = (req, res, next) ->
-    updateOnlineListMiddleware.ncalled += 1
-    next()
-
-  updateOnlineListMiddleware.ncalled = 0
-
   before (done) ->
     for own username, data of samples.users
       authdb.addAccount data.token, data.account
@@ -50,7 +44,6 @@ describe "Notifications API", () ->
       pubsub: pubsub
       queue: queue
       longPoll: longPoll
-      updateOnlineListMiddleware: updateOnlineListMiddleware
 
     api(endpoint(), server)
 
@@ -155,5 +148,3 @@ describe "Notifications API", () ->
         .get endpoint("/auth/invalid-token/messages")
         .expect 401, done
 
-    it 'updates online list for every users request', () ->
-      expect(updateOnlineListMiddleware.ncalled).to.be(3)
