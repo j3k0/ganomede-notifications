@@ -25,7 +25,6 @@ module.exports = {
 
   pushApi: {
     redisHost: 'localhost',
-    redisPort: 6379,
-    redisPrefix: [pkg.api, 'push-tokens'].join(':')
+    redisPort: 6379
   }
 };
