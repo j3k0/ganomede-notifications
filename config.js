@@ -21,5 +21,11 @@ module.exports = {
     redisHost: process.env.REDIS_ONLINELIST_PORT_6379_TCP_ADDR || 'localhost',
     redisPort: +process.env.REDIS_ONLINELIST_PORT_6379_TCP_PORT || 6379,
     maxSize: +process.env.ONLINE_LIST_SIZE || 20
+  },
+
+  pushApi: {
+    redisHost: 'localhost',
+    redisPort: 6379,
+    redisPrefix: [pkg.api, 'push-tokens'].join(':')
   }
 };
