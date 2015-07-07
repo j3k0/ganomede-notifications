@@ -24,7 +24,7 @@ module.exports = {
   },
 
   pushApi: {
-    redisHost: 'localhost',
-    redisPort: 6379
+    redisHost: process.env.REDIS_PUSHAPI_PORT_6379_TCP_ADDR || 'localhost',
+    redisPort: +process.env.REDIS_PUSHAPI_PORT_6379_TCP_PORT || 6379,
   }
 };
