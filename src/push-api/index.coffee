@@ -1,6 +1,6 @@
 restify = require 'restify'
 redis = require 'redis'
-authDb = require 'authdb'
+AuthDB = require 'authdb'
 helpers = require 'ganomede-helpers'
 Token = require './token'
 TokenStorage = require './token-storage'
