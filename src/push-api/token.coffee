@@ -1,4 +1,5 @@
 pkg = require '../../package.json'
+config = require '../../config'
 
 class Token
   constructor: (@key, @value) ->
@@ -19,8 +20,9 @@ class Token
     pos = name.search(/\/v\d+/)
     return if -1 == pos then name else name.slice(0, pos)
 
-Token.PREFIX = [Token.removeServiceVersion(pkg.api), 'push-notifications']
-  .join(':')
+Token.PREFIX = [
+  Token.removeServiceVersion(pkg.api), config.pushApi.tokensPrefix
+].join(':')
 
 Token.IOS = 'ios'
 Token.ANDROID = 'android'

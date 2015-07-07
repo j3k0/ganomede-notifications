@@ -5,3 +5,13 @@ exports.tokenData = () ->
     type: 'ios'
     value: 'alicesubstracttoken'
   }
+
+exports.notification = () ->
+  return {
+    from: 'substract-game',
+    to: 'alice',
+    type: 'invitation-created',
+    data: {},
+    timestamp: 1436269938903,
+    id: 1
+  }
