@@ -3,14 +3,8 @@ fakeRedis = require 'fakeredis'
 config = require '../../config'
 Token = require '../../src/push-api/token'
 TokenStorage = require '../../src/push-api/token-storage'
-
-tokenData = () ->
-  return {
-    username: 'alice'
-    app: 'substract-game'
-    type: 'ios'
-    value: 'alicesubstracttoken'
-  }
+samples = require './samples'
+tokenData = samples.tokenData
 
 describe 'Token', () ->
   data = tokenData()
@@ -23,6 +17,10 @@ describe 'Token', () ->
   it 'value is `type:token`', () ->
     expected = [data.type, data.value].join(':')
     expect(token.value).to.be(expected)
+
+  it 'type is one of Token.TYPES', () ->
+    expect(token.type).to.be(Token.IOS)
+    expect(token.type in Token.TYPES).to.be(true)
 
   describe '.removeServiceVersion()', () ->
     test = (name, unversionedName) ->

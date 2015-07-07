@@ -2,6 +2,7 @@ pkg = require '../../package.json'
 
 class Token
   constructor: (@key, @value) ->
+    @type = value.slice(0, value.indexOf(':'))
 
   @key: (username, app) ->
     return [Token.PREFIX, username, app].join(':')
@@ -20,5 +21,9 @@ class Token
 
 Token.PREFIX = [Token.removeServiceVersion(pkg.api), 'push-notifications']
   .join(':')
+
+Token.IOS = 'ios'
+Token.ANDROID = 'android'
+Token.TYPES = [Token.IOS, Token.ANDROID]
 
 module.exports = Token
