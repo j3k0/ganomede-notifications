@@ -1,7 +1,7 @@
 exports.tokenData = () ->
   return {
     username: 'alice'
-    app: 'substract-game'
+    app: 'substract-game/v1'
     type: 'apn'
     value: 'alicesubstracttoken'
   }
