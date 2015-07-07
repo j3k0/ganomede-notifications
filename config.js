@@ -1,9 +1,19 @@
 var pkg = require("./package.json");
 
+var unversionedApi = removeServiceVersion(pkg.api);
+
+function removeServiceVersion (name) {
+  var pos = name.search(/\/v\d+/);
+  return -1 == pos
+    ? name
+    : name.slice(0, pos);
+}
+
 module.exports = {
   port: +process.env.PORT || 8000,
   routePrefix: process.env.ROUTE_PREFIX || pkg.api,
   longPollDurationMillis: 30000,
+  removeServiceVersion: removeServiceVersion,
 
   authdb: {
     host: process.env.REDIS_AUTH_PORT_6379_TCP_ADDR || 'localhost',
@@ -26,7 +36,7 @@ module.exports = {
   pushApi: {
     redisHost: process.env.REDIS_PUSHAPI_PORT_6379_TCP_ADDR || 'localhost',
     redisPort: +process.env.REDIS_PUSHAPI_PORT_6379_TCP_PORT || 6379,
-    tokensPrefix: 'push-tokens',
-    queuePrefix: 'push-notifications'
+    tokensPrefix: [unversionedApi, 'push-tokens'].join(':'),
+    notificationsPrefix: [unversionedApi, 'push-notifications'].join(':')
   }
 };

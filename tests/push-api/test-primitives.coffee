@@ -10,8 +10,8 @@ describe 'Token', () ->
   data = tokenData()
   token = Token.fromPayload(data)
 
-  it 'keyed at `Token.PREFIX:username:app`', () ->
-    expected = [Token.PREFIX, data.username, data.app].join(':')
+  it 'keyed at `config.pushApi.tokensPrefix:username:app`', () ->
+    expected = [config.pushApi.tokensPrefix, data.username, data.app].join(':')
     expect(token.key).to.be(expected)
 
   it 'value is `type:token`', () ->
@@ -21,23 +21,6 @@ describe 'Token', () ->
   it 'type is one of Token.TYPES', () ->
     expect(token.type).to.be(Token.APN)
     expect(token.type in Token.TYPES).to.be(true)
-
-  describe '.removeServiceVersion()', () ->
-    test = (name, unversionedName) ->
-      actual = Token.removeServiceVersion(name)
-      expected = if arguments.length == 1 then name else unversionedName
-      expect(actual).to.be(expected)
-
-    it 'returns name without a version from versioned service name', () ->
-      test('service/v1', 'service')
-      test('service/something/v1', 'service/something')
-
-    it 'returns original string if no version is present', () ->
-      test('service')
-      test('service/v')
-      test('service/v-2')
-      test('service/vABC')
-      test('service/not-a-version/more?')
 
 describe 'TokenStorage', () ->
   redis = fakeRedis.createClient(__filename)

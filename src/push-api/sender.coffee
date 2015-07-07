@@ -1,5 +1,4 @@
 vasync = require 'vasync'
-pkg = require '../../package.json'
 config = require '../../config'
 Token = require './token'
 
@@ -29,7 +28,7 @@ class Sender
   # If there are notification, retrieve push tokens for them.
   # callback(err, task)
   _rpop: (callback) ->
-    @redis.rpop Sender.PREFIX, (err, notificationJson) ->
+    @redis.rpop config.pushApi.notificationsPrefix, (err, notificationJson) ->
       callback(err, if err then null else JSON.parse(notificationJson))
 
   _task: (notification, callback) ->
@@ -48,9 +47,5 @@ class Sender
       @_rpop.bind(@)
       @_task.bind(@)
     ], callback
-
-Sender.PREFIX = [
-  Token.removeServiceVersion(pkg.api), config.pushApi.queuePrefix
-].join(':')
 
 module.exports = Sender

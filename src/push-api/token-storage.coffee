@@ -21,5 +21,4 @@ class TokenStorage
       ret = members.map (value) -> new Token(key, value)
       callback(null, ret)
 
-
 module.exports = TokenStorage

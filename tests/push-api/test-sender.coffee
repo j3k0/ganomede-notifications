@@ -5,6 +5,7 @@ Sender = require '../../src/push-api/sender'
 Token = require '../../src/push-api/token'
 TokenStorage = require '../../src/push-api/token-storage'
 samples = require './samples'
+config = require '../../config'
 
 describe 'Push Sender', () ->
   redis = fakeRedis.createClient(__filename)
@@ -17,7 +18,8 @@ describe 'Push Sender', () ->
     vasync.pipeline
       funcs: [
         (_, cb) -> redis.flushdb(cb)
-        (_, cb) -> redis.lpush(Sender.PREFIX, notification, cb)
+        (_, cb) -> redis.lpush(config.pushApi.notificationsPrefix,
+                               notification, cb)
         (_, cb) -> tokenStorage.add(token, cb)
       ]
     , done
@@ -63,7 +65,8 @@ describe 'Push Sender', () ->
         done()
 
     it 'returns null when no items left in the list', (done) ->
-      redis.rpop Sender.PREFIX, (err, notification) ->
+      redis.rpop config.pushApi.notificationsPrefix, (err,
+                             notification) ->
         expect(err).to.be(null)
 
         sender.nextTask (err, task) ->
