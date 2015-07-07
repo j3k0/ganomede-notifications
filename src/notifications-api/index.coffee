@@ -135,13 +135,13 @@ notificationsApi = (options={}) ->
     body.timestamp = Date.now()
 
     # add the message to the user's list
-    queue.addMessage body.to, body, (err, messageId) ->
+    queue.addMessage body.to, body, (err, message) ->
       if err
         return sendError(err, next)
 
       reply =
-        id: messageId
-        timestamp: body.timestamp
+        id: message.id
+        timestamp: message.timestamp
 
       # notify user that he has a message and respond to request
       pubsub.publish(body.to)

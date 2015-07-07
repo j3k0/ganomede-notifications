@@ -116,9 +116,9 @@ describe "Notifications API", () ->
       message = {id: NEW_MESSAGE_ID, data: "notification for #{username}"}
 
       add = () ->
-        queue.addMessage username, message, (err, messageId) ->
+        queue.addMessage username, message, (err, updatedMessage) ->
           expect(err).to.be(null)
-          expect(messageId).to.be(message.id)
+          expect(updatedMessage.id).to.be(message.id)
           pubsub.publish(username)
 
       timeout(LP_MILLIS / 2, add)
