@@ -19,8 +19,8 @@ class Sender
     vasync.forEachParallel
       func: (token, cb) ->
         switch token.type
-          when Token.IOS then cb(null, "#{Token.IOS}-sent")
-          when Token.ANDROID then cb(null, "#{Token.ANDROID}-sent")
+          when Token.APN then cb(null, "#{Token.APN}-sent")
+          when Token.GCM then cb(null, "#{Token.GCM}-sent")
           else cb(new Error('UknownTokenType'))
       inputs: task.tokens
     , callback

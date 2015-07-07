@@ -166,8 +166,8 @@ Saves user's push notifications token to database. Example Body:
 ``` js
 { username: 'alice',             // String, which user this token is for
   app: 'substract-game',         // String, which app this token is for
-  type: 'ios',                   // String, which OS this token is for,
-                                 //         can be `ios` or `android`
+  type: 'apn',                   // String, which push notifications provider 
+                                 //         this token is for, `apn` or `gcm`
                                  //         (see Token.TYPES)
   value: 'alicesubstracttoken' } // token value
 ```

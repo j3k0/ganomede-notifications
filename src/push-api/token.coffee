@@ -25,8 +25,8 @@ Token.PREFIX = [
   Token.removeServiceVersion(pkg.api), config.pushApi.tokensPrefix
 ].join(':')
 
-Token.IOS = 'ios'
-Token.ANDROID = 'android'
-Token.TYPES = [Token.IOS, Token.ANDROID]
+Token.APN = 'apn'
+Token.GCM = 'gcm'
+Token.TYPES = [Token.APN, Token.GCM]
 
 module.exports = Token

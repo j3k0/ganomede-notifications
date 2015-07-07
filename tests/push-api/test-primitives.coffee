@@ -19,7 +19,7 @@ describe 'Token', () ->
     expect(token.value).to.be(expected)
 
   it 'type is one of Token.TYPES', () ->
-    expect(token.type).to.be(Token.IOS)
+    expect(token.type).to.be(Token.APN)
     expect(token.type in Token.TYPES).to.be(true)
 
   describe '.removeServiceVersion()', () ->
