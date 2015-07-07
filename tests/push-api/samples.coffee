@@ -8,7 +8,7 @@ exports.tokenData = () ->
 
 exports.notification = () ->
   return {
-    from: 'substract-game',
+    from: 'substract-game/v1',
     to: 'alice',
     type: 'invitation-created',
     data: {},

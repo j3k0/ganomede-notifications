@@ -6,7 +6,8 @@ class Token
     @type = value.slice(0, value.indexOf(':'))
 
   @key: (username, app) ->
-    return [Token.PREFIX, username, app].join(':')
+    unversionedApp = Token.removeServiceVersion(app)
+    return [Token.PREFIX, username, unversionedApp].join(':')
 
   @value: (type, value) ->
     return [type, value].join(':')
