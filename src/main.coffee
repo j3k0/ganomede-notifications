@@ -25,6 +25,7 @@ addRoutes = (prefix, server) ->
   # Notifications
   api = notificationsApi(
     updateOnlineListMiddleware: onlineApi.updateOnlineListMiddleware
+    addPushNotification: pushApi.addPushNotification
   )
   api(prefix, server)
 

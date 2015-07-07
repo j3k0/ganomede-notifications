@@ -4,6 +4,7 @@ AuthDB = require 'authdb'
 helpers = require 'ganomede-helpers'
 Token = require './token'
 TokenStorage = require './token-storage'
+Sender = require './sender'
 config = require '../../config'
 log = require '../log'
 
@@ -11,6 +12,8 @@ module.exports = (options={}) ->
   tokenStorage = options.tokenStorage || new TokenStorage(
     redis.createClient(config.pushApi.redisPort, config.pushApi.redisHost)
   )
+
+  sender = options.sender || new Sender(tokenStorage.redis, tokenStorage)
 
   authdb = options.authdb || AuthDB.createClient(
     host: config.authdb.host
@@ -42,6 +45,10 @@ module.exports = (options={}) ->
       res.send(200)
       next()
 
-  return (prefix, server) ->
+  api = (prefix, server) ->
     server.post "/#{prefix}/auth/:authToken/push-token",
       authMiddleware, savePushToken
+
+  api.addPushNotification = sender.addNotification.bind(sender)
+
+  return api

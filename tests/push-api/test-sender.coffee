@@ -10,6 +10,7 @@ config = require '../../config'
 describe 'Push Sender', () ->
   redis = fakeRedis.createClient(__filename)
   tokenStorage = new TokenStorage(redis)
+  sender = new Sender(redis, tokenStorage)
 
   beforeEach (done) ->
     token = Token.fromPayload(samples.tokenData())
@@ -50,8 +51,6 @@ describe 'Push Sender', () ->
       expect(create).withArgs(redis).to.throwError(/TokenStorageRequired/)
 
   describe '#nextTask()', () ->
-    sender = new Sender(redis, tokenStorage)
-
     it 'returns task with notification and push token
         when there are messages in the list',
     (done) ->
@@ -72,4 +71,17 @@ describe 'Push Sender', () ->
         sender.nextTask (err, task) ->
           expect(err).to.be(null)
           expect(task).to.be(null)
+          done()
+
+  describe '#addNotification()', () ->
+    it 'adds push notification to the head of the list', (done) ->
+      notification = {some: 'thing'}
+
+      sender.addNotification notification, (err) ->
+        expect(err).to.be(null)
+        redis.lrange config.pushApi.notificationsPrefix, 0, -1, (err, list) ->
+          expect(err).to.be(null)
+          expect(list).to.be.an(Array)
+          expect(list.length).to.be.greaterThan(1)
+          expect(JSON.parse(list[0])).to.eql(notification)
           done()

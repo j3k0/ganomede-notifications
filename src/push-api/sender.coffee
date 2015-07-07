@@ -1,6 +1,7 @@
 vasync = require 'vasync'
 config = require '../../config'
 Token = require './token'
+log = require '../log'
 
 class Sender
   constructor: (@redis, @tokenStorage) ->
@@ -47,5 +48,16 @@ class Sender
       @_rpop.bind(@)
       @_task.bind(@)
     ], callback
+
+  # Add notification
+  addNotification: (notification, callback=->) ->
+    json = JSON.stringify(notification)
+    @redis.lpush config.pushApi.notificationsPrefix, json, (err, newLength) ->
+      if (err)
+        log.error 'Sender#addNotification() failed',
+          err: err
+          notification: notification
+
+      callback(err)
 
 module.exports = Sender
