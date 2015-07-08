@@ -6,12 +6,16 @@ exports.tokenData = () ->
     value: 'alicesubstracttoken'
   }
 
-exports.notification = () ->
-  return {
+exports.notification = (push, reciever='alice') ->
+  ret =
     from: 'substract-game/v1',
-    to: 'alice',
+    to: reciever,
     type: 'invitation-created',
     data: {},
     timestamp: 1436269938903,
     id: 1
-  }
+
+  if push
+    ret.push = push
+
+  return ret

@@ -12,16 +12,18 @@ describe 'Push Sender', () ->
   redis = fakeRedis.createClient(__filename)
   tokenStorage = new TokenStorage(redis)
   sender = new Sender(redis, tokenStorage)
+  push = {some: 'push-data'}
+  notification = JSON.stringify(samples.notification(push))
+  notificationNobody = JSON.stringify(samples.notification(push, 'nobody'))
 
   beforeEach (done) ->
     token = Token.fromPayload(samples.tokenData())
-    notification = JSON.stringify(samples.notification())
 
     vasync.pipeline
       funcs: [
         (_, cb) -> redis.flushdb(cb)
         (_, cb) -> redis.lpush(config.pushApi.notificationsPrefix,
-                               notification, cb)
+                               notification, notificationNobody, cb)
         (_, cb) -> tokenStorage.add(token, cb)
       ]
     , done
@@ -63,9 +65,24 @@ describe 'Push Sender', () ->
         expect(task.tokens[0]).to.be.a(Token)
         done()
 
+    it 'returns null when no tokens found for notification reciever', (done) ->
+      # remove good one, leaving notification with no receiver
+      redis.multi()
+        .rpop(config.pushApi.notificationsPrefix)
+        .llen(config.pushApi.notificationsPrefix)
+        .exec (err, replies) ->
+          expect(err).to.be(null)
+          expect(replies[0]).to.be(notification)
+          expect(replies[1]).to.be(1)
+
+          sender.nextTask (err, task) ->
+            expect(err).to.be(null)
+            expect(task).to.be(null)
+            done()
+
     it 'returns null when no items left in the list', (done) ->
-      redis.rpop config.pushApi.notificationsPrefix, (err,
-                             notification) ->
+      # empty queue
+      redis.del config.pushApi.notificationsPrefix, (err) ->
         expect(err).to.be(null)
 
         sender.nextTask (err, task) ->

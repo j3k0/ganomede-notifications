@@ -1,6 +1,7 @@
 vasync = require 'vasync'
 config = require '../../config'
 Token = require './token'
+Task = require './task'
 log = require '../log'
 
 class Sender
@@ -37,11 +38,11 @@ class Sender
       return callback(null, null)
 
     @tokenStorage.get notification.to, notification.from, (err, tokens) ->
-      task =
-        notification: notification
-        tokens: tokens
+      if tokens.length == 0
+        log.warn 'Found no push tokens for sending notification', notification
 
-      callback(err, if err then null else task)
+      ok = !err && tokens.length
+      callback(err, if ok then new Task(notification, tokens) else null)
 
   nextTask: (callback) ->
     vasync.waterfall [
