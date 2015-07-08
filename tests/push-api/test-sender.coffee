@@ -1,5 +1,6 @@
 vasync = require 'vasync'
 expect = require 'expect.js'
+sinon = require 'sinon'
 fakeRedis = require 'fakeredis'
 Sender = require '../../src/push-api/sender'
 Task = require '../../src/push-api/task'
@@ -8,7 +9,7 @@ TokenStorage = require '../../src/push-api/token-storage'
 samples = require './samples'
 config = require '../../config'
 
-describe 'Push Sender', () ->
+describe 'Sender', () ->
   redis = fakeRedis.createClient(__filename)
   tokenStorage = new TokenStorage(redis)
   sender = new Sender(redis, tokenStorage)
@@ -30,14 +31,30 @@ describe 'Push Sender', () ->
 
   describe '.send()', () ->
     token = Token.fromPayload(samples.tokenData())
-    task = new Task(samples.notification(), [token])
 
     it 'sends push notifications', (done) ->
+      task = new Task(samples.notification(), [token])
+
       Sender.send task, (err, results) ->
         expect(err).to.be(null)
         expect(results.operations).to.have.length(task.tokens.length)
         expect(results.operations.every (op) -> op.status == 'ok').to.be(true)
         done()
+
+    it 'sends APN', () ->
+      original = Sender.sendApn
+      Sender.sendApn = spy = sinon.spy(original)
+      task = new Task(samples.notification(), [token, token])
+
+      Sender.send task, (err, results) ->
+        expect(err).to.be(null)
+        expect(spy.callCount).to.be(task.tokens.length)
+
+        Sender.sendApn = original
+        done()
+
+  describe '.sendApn()', () ->
+    it 'has no implementation'
 
   describe 'new Sender(redis)', () ->
     it 'creates PushSender', () ->

@@ -1,3 +1,4 @@
+apn = require 'apn'
 vasync = require 'vasync'
 config = require '../../config'
 Token = require './token'
@@ -12,19 +13,22 @@ class Sender
     unless @tokenStorage
       throw new Error('TokenStorageRequired')
 
-  # Sends push notification from the queue.
-  # task is JS object with following fields:
-  #   notification — actual payload
-  #   tokens — Push Tokens (instance of Token)
+  # Sends push notification from task.notification for each one of task.tokens.
   @send: (task, callback) ->
     vasync.forEachParallel
       func: (token, cb) ->
         switch token.type
-          when Token.APN then cb(null, "#{Token.APN}-sent")
-          when Token.GCM then cb(null, "#{Token.GCM}-sent")
+          when Token.APN
+            Sender.sendApn(task.convertPayload(token.type), token, cb)
+          when Token.GCM then cb(new Error('GcmNotImplemented'))
           else cb(new Error('UknownTokenType'))
       inputs: task.tokens
     , callback
+
+  # Send to iOS
+  @sendApn = (payload, token, callback) ->
+    cb = callback.bind(null, null, {payload: payload, token: token})
+    process.nextTick(cb)
 
   # Look into redis list for new push notifications to be send.
   # If there are notification, retrieve push tokens for them.
