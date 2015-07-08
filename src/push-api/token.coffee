@@ -2,7 +2,7 @@ config = require '../../config'
 
 class Token
   constructor: (@key, @value) ->
-    @type = value.slice(0, value.indexOf(':'))
+    @type = @value.slice(0, @value.indexOf(':'))
 
   @key: (username, app) ->
     return [config.pushApi.tokensPrefix, username, app].join(':')

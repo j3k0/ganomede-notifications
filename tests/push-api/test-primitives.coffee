@@ -10,6 +10,11 @@ describe 'Token', () ->
   data = tokenData()
   token = Token.fromPayload(data)
 
+  it 'new Token() works', () ->
+    create = (k, v) -> new Token(k, v)
+    expect(create).withArgs('key', 'value').to.not.throwException()
+    expect(create('k', 'v')).to.be.a(Token)
+
   it 'keyed at `config.pushApi.tokensPrefix:username:app`', () ->
     expected = [config.pushApi.tokensPrefix, data.username, data.app].join(':')
     expect(token.key).to.be(expected)
