@@ -2,6 +2,7 @@ vasync = require 'vasync'
 expect = require 'expect.js'
 fakeRedis = require 'fakeredis'
 Sender = require '../../src/push-api/sender'
+Task = require '../../src/push-api/task'
 Token = require '../../src/push-api/token'
 TokenStorage = require '../../src/push-api/token-storage'
 samples = require './samples'
@@ -26,9 +27,8 @@ describe 'Push Sender', () ->
     , done
 
   describe '.send()', () ->
-    task =
-      notification: samples.notification()
-      tokens: [Token.fromPayload(samples.tokenData())]
+    token = Token.fromPayload(samples.tokenData())
+    task = new Task(samples.notification(), [token])
 
     it 'sends push notifications', (done) ->
       Sender.send task, (err, results) ->
