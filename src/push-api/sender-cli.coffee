@@ -42,7 +42,7 @@ class SenderCli extends events.EventEmitter
 SenderCli.events =
   DONE: 'done'
 
-main = () ->
+main = (testing) ->
   client = redis.createClient(
     config.pushApi.redisPort, config.pushApi.redisHost
   )
@@ -77,10 +77,39 @@ main = () ->
       log.info 'Redis closed with', {err: err, reply: reply}
       process.exit(exitCode)
 
-  cli.once(SenderCli.events.DONE, onDone)
-  cli.tick()
+  test = () ->
+    log.info 'Testing…'
+
+    token = Token.fromPayload(
+      username: 'alice'
+      app: 'game'
+      type: 'apn'
+      value: process.env.TEST_APN_TOKEN
+    )
+
+    notification =
+      from: 'game',
+      to: 'alice',
+      type: 'invitation-created',
+      data: {},
+      timestamp: 1436269938903,
+      id: 1
+
+    (require 'vasync').parallel
+      funcs: [
+        storage.add.bind(storage, token)
+        sender.addNotification.bind(sender, notification)
+      ]
+    , (err, results) ->
+      if err then onDone(err) else start()
+
+  start = () ->
+    cli.once(SenderCli.events.DONE, onDone)
+    cli.tick()
+
+  if testing then test() else start()
 
 module.exports = SenderCli
 
 unless module.parent
-  main()
+  main(process.env.hasOwnProperty('TEST_APN_TOKEN'))
