@@ -28,6 +28,9 @@ describe 'Token', () ->
     expect(token.type).to.be(Token.APN)
     expect(token.type in Token.TYPES).to.be(true)
 
+  it '#data() returns token value without type', () ->
+    expect(token.data()).to.be(data.value)
+
 describe 'TokenStorage', () ->
   redis = fakeRedis.createClient(__filename)
   data = tokenData()
