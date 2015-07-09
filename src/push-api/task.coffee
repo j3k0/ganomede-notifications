@@ -33,7 +33,7 @@ class Task
       Array.isArray(push.title) && push.hasOwnProperty('type')
 
     unless needsConverting
-      return push
+      return @notification
 
     unless @converted.hasOwnProperty(type)
       unless Task.converters.hasOwnProperty(type)

@@ -87,6 +87,10 @@ describe 'Task', () ->
       expected = Task.converters[Token.APN](push)
       expect(expected).to.eql(task.convertPayload(token.type))
 
+    it 'returns notification when conversion isn\'t required', () ->
+      t = new Task(samples.notification(), [])
+      expect(t.convertPayload(Token.APN)).to.eql(samples.notification())
+
     it 'doesnt convert same token type twice returning from cache instead',
     () ->
       # Checks that we got exact reference to object inside inner task cache
