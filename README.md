@@ -37,6 +37,7 @@ Variables available for service configuration (see [config.js](/config.js)):
  * `ROUTE_PREFIX`
  * `REDIS_AUTH_PORT_6379_TCP_ADDR` — IP of the AuthDB redis
  * `REDIS_AUTH_PORT_6379_TCP_PORT` — Port of the AuthDB redis
+ * `NODE_ENV` — Antything except `production` means that app is running in development (debug) mode
  * Notifications API
    - `REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR` — Redis notifications host
    - `REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT` — Redis notifications port
@@ -50,6 +51,8 @@ Variables available for service configuration (see [config.js](/config.js)):
  * Push Notifications API
    - `REDIS_PUSHAPI_PORT_6379_TCP_ADDR` — Redis host for storing push tokens
    - `REDIS_PUSHAPI_PORT_6379_TCP_PORT` — Redis port for storing push tokens
+   - `APN_CERT_FILEPATH` — Path to .pem file with APN certificate
+   - `APN_KEY_FILEPATH` — Path to .pem file with APN private key
 
 AuthDB
 ------

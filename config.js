@@ -1,3 +1,4 @@
+var path = require('path');
 var pkg = require("./package.json");
 
 var unversionedApi = removeServiceVersion(pkg.api);
@@ -14,6 +15,7 @@ module.exports = {
   routePrefix: process.env.ROUTE_PREFIX || pkg.api,
   longPollDurationMillis: 30000,
   removeServiceVersion: removeServiceVersion,
+  debug: process.env.NODE_ENV !== 'production',
 
   authdb: {
     host: process.env.REDIS_AUTH_PORT_6379_TCP_ADDR || 'localhost',
@@ -37,6 +39,17 @@ module.exports = {
     redisHost: process.env.REDIS_PUSHAPI_PORT_6379_TCP_ADDR || 'localhost',
     redisPort: +process.env.REDIS_PUSHAPI_PORT_6379_TCP_PORT || 6379,
     tokensPrefix: [unversionedApi, 'push-tokens'].join(':'),
-    notificationsPrefix: [unversionedApi, 'push-notifications'].join(':')
+    notificationsPrefix: [unversionedApi, 'push-notifications'].join(':'),
+    apn: {
+      // connection
+      cert: process.env.APN_CERT_FILEPATH ||
+        path.join(__dirname, 'tests/push-api/cert.pem'),
+      key: process.env.APN_KEY_FILEPATH ||
+        path.join(__dirname, 'tests/push-api/key.pem'),
+      // push messages
+      expiry: Math.floor(Date.now() / 1000) + 3600,
+      badge: 3,
+      sound: 'ping.aiff'
+    }
   }
 };
