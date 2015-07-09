@@ -12,21 +12,21 @@ describe 'SenderCli', () ->
   redis = fakeredis.createClient(__filename)
   storage = new TokenStorage(redis)
 
-  sender = new Sender(redis, storage)
-  sendOriginal = Sender.send
-  sendSpy = sinon.spy(Sender.send)
+  sender = new Sender(redis, storage, samples.fakeSenders())
+  sendOriginal = sender.send
+  sendSpy = sinon.spy(sender.send)
 
   cli = new SenderCli(sender)
   tickOriginal = cli.tick
   tickSpy = sinon.spy(cli.tick)
 
   before (done) ->
-    Sender.send = sendSpy
+    sender.send = sendSpy
     cli.tick = tickSpy
     redis.flushdb(done)
 
   after () ->
-    Sender.send = sendOriginal
+    sender.send = sendOriginal
     cli.tick = tickOriginal
 
   describe 'new SenderCli(sender)', () ->

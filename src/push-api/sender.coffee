@@ -4,9 +4,37 @@ config = require '../../config'
 Token = require './token'
 Task = require './task'
 log = require '../log'
+config = require '../../config'
+
+# TODO
+# listen for errors:
+# https://github.com/argon/node-apn/blob/master/doc/connection.markdown
+class ApnSender
+  constructor: (options) ->
+    @connection = new apn.Connection(
+      production: !config.debug,
+      cert: options.cert,
+      key: options.key
+    )
+
+  # TODO
+  # errors?
+  send: (payload, tokens, callback) ->
+    notification = new apn.Notification()
+    notification.expiry = config.pushApi.apn.expiry
+    notification.badge = config.pushApi.apn.badge
+    notification.sound = config.pushApi.apn.sound
+    notification.payload = payload
+
+    devices = tokens.map (token) -> new apn.Device(token.data())
+    @connection.pushNotification(notification, devices)
+    @connection.once('completed', callback.bind(null, null))
+
+  close: () ->
+    @connection.shutdown()
 
 class Sender
-  constructor: (@redis, @tokenStorage) ->
+  constructor: (@redis, @tokenStorage, @senders={}) ->
     unless @redis
       throw new Error('RedisClientRequired')
 
@@ -14,21 +42,25 @@ class Sender
       throw new Error('TokenStorageRequired')
 
   # Sends push notification from task.notification for each one of task.tokens.
-  @send: (task, callback) ->
-    vasync.forEachParallel
-      func: (token, cb) ->
-        switch token.type
-          when Token.APN
-            Sender.sendApn(task.convertPayload(token.type), token, cb)
-          when Token.GCM then cb(new Error('GcmNotImplemented'))
-          else cb(new Error('UknownTokenType'))
-      inputs: task.tokens
-    , callback
+  send: (task, callback) ->
+    # Group tokens by type
+    grouppedTokens = {}
+    task.tokens.forEach (token) ->
+      grouppedTokens[token.type] = grouppedTokens[token.type] || []
+      grouppedTokens[token.type].push(token)
 
-  # Send to iOS
-  @sendApn = (payload, token, callback) ->
-    cb = callback.bind(null, null, {payload: payload, token: token})
-    process.nextTick(cb)
+    # For each token group, invoke appropriate sender
+    sendFunctions = []
+    for own type, tokens of grouppedTokens
+      sender = @senders[type]
+      if !sender
+        throw new Error("No sender specified for #{type} token type")
+
+      fn = sender.send.bind(sender, task.convertPayload(type), tokens)
+      sendFunctions.push(fn)
+
+    # Exec those functions
+    vasync.parallel({funcs: sendFunctions}, callback)
 
   # Look into redis list for new push notifications to be send.
   # If there are notification, retrieve push tokens for them.
@@ -65,4 +97,5 @@ class Sender
 
       callback(err)
 
+Sender.ApnSender = ApnSender
 module.exports = Sender

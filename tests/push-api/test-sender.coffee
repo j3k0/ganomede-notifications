@@ -12,7 +12,6 @@ config = require '../../config'
 describe 'Sender', () ->
   redis = fakeRedis.createClient(__filename)
   tokenStorage = new TokenStorage(redis)
-  sender = new Sender(redis, tokenStorage)
   push = {some: 'push-data'}
   notification = JSON.stringify(samples.notification(push))
   notificationNobody = JSON.stringify(samples.notification(push, 'nobody'))
@@ -29,33 +28,6 @@ describe 'Sender', () ->
       ]
     , done
 
-  describe '.send()', () ->
-    token = Token.fromPayload(samples.tokenData())
-
-    it 'sends push notifications', (done) ->
-      task = new Task(samples.notification(), [token])
-
-      Sender.send task, (err, results) ->
-        expect(err).to.be(null)
-        expect(results.operations).to.have.length(task.tokens.length)
-        expect(results.operations.every (op) -> op.status == 'ok').to.be(true)
-        done()
-
-    it 'sends APN', () ->
-      original = Sender.sendApn
-      Sender.sendApn = spy = sinon.spy(original)
-      task = new Task(samples.notification(), [token, token])
-
-      Sender.send task, (err, results) ->
-        expect(err).to.be(null)
-        expect(spy.callCount).to.be(task.tokens.length)
-
-        Sender.sendApn = original
-        done()
-
-  describe '.sendApn()', () ->
-    it 'has no implementation'
-
   describe 'new Sender(redis)', () ->
     it 'creates PushSender', () ->
       sender = new Sender(redis, tokenStorage)
@@ -69,10 +41,32 @@ describe 'Sender', () ->
       create = (r, tokens) -> new Sender(r, tokens)
       expect(create).withArgs(redis).to.throwError(/TokenStorageRequired/)
 
+  describe '#send()', () ->
+    sender = new Sender(redis, tokenStorage, samples.fakeSenders())
+    token = Token.fromPayload(samples.tokenData())
+    tokens = [token, token]
+    task = new Task(samples.notification(), tokens)
+
+    it 'sends push notifications', (done) ->
+      sender.send task, (err, results) ->
+        expect(err).to.be(null)
+
+        spy = sender.senders[token.type].send
+        args = spy.firstCall.args
+        expectedFirstTwoArgs = [task.convertPayload(token.type), tokens]
+
+        expect(spy.callCount).to.be(1)
+        expect(args).to.have.length(3)
+        expect(args.slice(0, -1)).to.eql(expectedFirstTwoArgs)
+
+        done()
+
   describe '#nextTask()', () ->
     it 'returns task with notification and push token
         when there are messages in the list',
     (done) ->
+      sender = new Sender(redis, tokenStorage, samples.fakeSenders())
+
       sender.nextTask (err, task) ->
         expect(err).to.be(null)
         expect(task).to.be.an(Object)
@@ -83,6 +77,8 @@ describe 'Sender', () ->
         done()
 
     it 'returns null when no tokens found for notification reciever', (done) ->
+      sender = new Sender(redis, tokenStorage, samples.fakeSenders())
+
       # remove good one, leaving notification with no receiver
       redis.multi()
         .rpop(config.pushApi.notificationsPrefix)
@@ -98,6 +94,8 @@ describe 'Sender', () ->
             done()
 
     it 'returns null when no items left in the list', (done) ->
+      sender = new Sender(redis, tokenStorage, samples.fakeSenders())
+
       # empty queue
       redis.del config.pushApi.notificationsPrefix, (err) ->
         expect(err).to.be(null)
@@ -109,13 +107,32 @@ describe 'Sender', () ->
 
   describe '#addNotification()', () ->
     it 'adds push notification to the head of the list', (done) ->
-      notification = {some: 'thing'}
+      sender = new Sender(redis, tokenStorage, samples.fakeSenders())
+      addedNotification = {some: 'thing'}
 
-      sender.addNotification notification, (err) ->
+      sender.addNotification addedNotification, (err) ->
         expect(err).to.be(null)
         redis.lrange config.pushApi.notificationsPrefix, 0, -1, (err, list) ->
           expect(err).to.be(null)
           expect(list).to.be.an(Array)
           expect(list.length).to.be.greaterThan(1)
-          expect(JSON.parse(list[0])).to.eql(notification)
+          expect(JSON.parse(list[0])).to.eql(addedNotification)
           done()
+
+  describe 'Sender.ApnSender', () ->
+    apnSender = new Sender.ApnSender(
+      cert: config.pushApi.apn.cert
+      key: config.pushApi.apn.key
+    )
+
+    tokenVal = "#{Token.APN}:#{process.env.TEST_APN_TOKEN}"
+    token = new Token('key_dont_matter', tokenVal)
+    task = new Task(samples.notification(), [token])
+
+    if process.env.hasOwnProperty('TEST_APN_TOKEN')
+      it 'sends notifications', (done) ->
+        apnSender.send task.convertPayload(token.type), task.tokens, (err) ->
+          expect(err).to.be(null)
+          done()
+    else
+      it 'sends notifications (please specify TEST_APN_TOKEN env var)'

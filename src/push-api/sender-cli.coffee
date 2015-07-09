@@ -3,6 +3,7 @@
 events = require 'events'
 redis = require 'redis'
 config = require '../../config'
+Token = require './token'
 TokenStorage = require './token-storage'
 Sender = require './sender'
 log = (require '../log').child({SenderCli: true})
@@ -28,7 +29,7 @@ class SenderCli extends events.EventEmitter
       log.info('onTask() recieved null task, queue is empty')
       return @done(null)
 
-    Sender.send task, (err, results) =>
+    @sender.send task, (err, results) =>
       if (err)
         log.error 'Sender.send() failed to send notification',
           err: err,
@@ -46,8 +47,14 @@ main = () ->
     config.pushApi.redisPort, config.pushApi.redisHost
   )
 
+  senders = {}
+  senders[Token.APN] = new Sender.ApnSender(
+    cert: config.pushApi.apn.cert
+    key: config.pushApi.apn.key
+  )
+
   storage = new TokenStorage(client)
-  sender = new Sender(client, storage)
+  sender = new Sender(client, storage, senders)
   cli = new SenderCli(sender)
 
   onDone = (err) ->
@@ -55,6 +62,9 @@ main = () ->
       log.error 'Done with error', err
     else
       log.info 'Done successfully'
+
+    for own type, sender of senders
+      sender.close()
 
     client.quit (redisErr, reply) ->
       if err
