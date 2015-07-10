@@ -6,8 +6,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "start": "./node_modules/.bin/forever start index.js",
-    "stop": "./node_modules/.bin/forever stop index.js",
+    "start": "node index.js",
     "test": "make test"
   },
   "author": "Jean-Christophe Hoelt <hoelt@fovea.cc>",
@@ -21,7 +20,6 @@
     "coffeelint": "^1.6.1",
     "concat-stream": "^1.4.7",
     "eslint": "^0.10.0",
-    "forever": "^0.13.0",
     "ganomede": "^0.2.0",
     "ganomede-helpers": "^0.4.1",
     "jshint": "^2.5.10",
