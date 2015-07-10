@@ -20,6 +20,9 @@ run: check
 run-worker: check
 	./node_modules/.bin/coffee src/push-api/sender-cli.coffee | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
 
+run-worker-loop: check
+	./push-worker.sh | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
+
 install: node_modules
 
 node_modules: package.json
@@ -38,6 +41,9 @@ docker-run: docker-prepare
 
 docker-run-worker: docker-prepare
 	docker-compose run --rm --service-ports app make run-worker "BUNYAN_LEVEL=${BUNYAN_LEVEL}" "TEST_APN_TOKEN=${TEST_APN_TOKEN}"
+
+docker-run-worker-loop: docker-prepare
+	docker-compose run --rm --service-ports app make run-worker-loop "BUNYAN_LEVEL=${BUNYAN_LEVEL}" "TEST_APN_TOKEN=${TEST_APN_TOKEN}"
 
 docker-test: docker-prepare
 	docker-compose run --rm app make test BUNYAN_LEVEL=${BUNYAN_LEVEL}

@@ -112,4 +112,4 @@ main = (testing) ->
 module.exports = SenderCli
 
 unless module.parent
-  main(process.env.hasOwnProperty('TEST_APN_TOKEN'))
+  main !!process.env.TEST_APN_TOKEN
