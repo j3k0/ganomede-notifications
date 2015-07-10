@@ -2,6 +2,7 @@ vasync = require 'vasync'
 expect = require 'expect.js'
 supertest = require 'supertest'
 fakeRedis = require 'fakeredis'
+sinon = require 'sinon'
 fakeAuthdb = require '../fake-authdb'
 notificationsApi = require "../../src/notifications-api"
 PubSub = require "../../src/notifications-api/pubsub"
@@ -18,7 +19,7 @@ INVALID_SECRET = 'INVALID_SECRET'
 API_SECRET = process.env.API_SECRET = 'API_SECRET'
 LP_MILLIS = 300 # if this is too low, we won't be able to put message in redis
                 # in time for testing long poll triggering on new message
-NEW_MESSAGE_ID = 2
+NEW_MESSAGE_ID = 3
 
 endpoint = (path) ->
   return "/#{config.routePrefix}#{path || ''}"
@@ -30,6 +31,7 @@ describe "Notifications API", () ->
   authdb = fakeAuthdb.createClient()
   queue = new Queue(redis, {maxSize: config.redis.queueSize})
   longPoll = new LongPoll(LP_MILLIS)
+  addPushNotification = sinon.spy()
   pubsub = new PubSub
     publisher: redis
     subscriber: fakeRedis.createClient(__filename)
@@ -44,6 +46,7 @@ describe "Notifications API", () ->
       pubsub: pubsub
       queue: queue
       longPoll: longPoll
+      addPushNotification: addPushNotification
 
     api(endpoint(), server)
 
@@ -71,6 +74,30 @@ describe "Notifications API", () ->
           expect(res.body).to.be.an(Object)
           expect(res.body.id).to.be(1)
           expect(res.body).to.have.property('timestamp')
+          done()
+
+    it 'when adding message with `.push` object,
+        calls options.addPushNotification',
+    (done) ->
+      username = samples.users.pushNotified.account.username
+      push = {message: "This is push message for #{username}, nice!"}
+      notification = samples.notification(API_SECRET, username, push)
+
+      go()
+        .post endpoint('/messages')
+        .send notification
+        .expect 200
+        .end (err, res) ->
+          expect(err).to.be(null)
+          # Update sent notification to a state that we expect to be saved as
+          # and compare it to what addPushNotification() was called with.
+          delete notification.secret
+          notification.id = res.body.id
+          notification.timestamp = res.body.timestamp
+
+          expect(addPushNotification.calledOnce).to.be(true)
+          expect(addPushNotification.firstCall.args).to.eql([notification])
+
           done()
 
     it 'replies with HTTP 400 on missing API secret', (done) ->
@@ -116,9 +143,9 @@ describe "Notifications API", () ->
       message = {id: NEW_MESSAGE_ID, data: "notification for #{username}"}
 
       add = () ->
-        queue.addMessage username, message, (err, messageId) ->
+        queue.addMessage username, message, (err, updatedMessage) ->
           expect(err).to.be(null)
-          expect(messageId).to.be(message.id)
+          expect(updatedMessage.id).to.be(message.id)
           pubsub.publish(username)
 
       timeout(LP_MILLIS / 2, add)

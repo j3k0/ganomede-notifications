@@ -37,14 +37,23 @@ Variables available for service configuration (see [config.js](/config.js)):
  * `ROUTE_PREFIX`
  * `REDIS_AUTH_PORT_6379_TCP_ADDR` — IP of the AuthDB redis
  * `REDIS_AUTH_PORT_6379_TCP_PORT` — Port of the AuthDB redis
- * `REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR` — Redis notifications host
- * `REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT` — Redis notifications port
- * `MESSAGE_QUEUE_SIZE` — Redis notifications queue size
- * `API_SECRET` — Secret passcode required to send notifications
- * `ONLINE_LIST_SIZE` — Redis list size with users most recently online
- * `ONLINE_LIST_INVISIBLE_MATCH` - Regex matching invisible players
- * `REDIS_ONLINELIST_PORT_6379_TCP_ADDR` — Redis online list host
- * `REDIS_ONLINELIST_PORT_6379_TCP_PORT` — Redis online list port
+ * `NODE_ENV` — Antything except `production` means that app is running in development (debug) mode
+ * Notifications API
+   - `REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR` — Redis notifications host
+   - `REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT` — Redis notifications port
+   - `MESSAGE_QUEUE_SIZE` — Redis notifications queue size
+   - `API_SECRET` — Secret passcode required to send notifications
+ * Online List API
+   - `ONLINE_LIST_SIZE` — Redis list size with users most recently online
+   - `ONLINE_LIST_INVISIBLE_MATCH` - Regex matching invisible players
+   - `REDIS_ONLINELIST_PORT_6379_TCP_ADDR` — Redis online list host
+   - `REDIS_ONLINELIST_PORT_6379_TCP_PORT` — Redis online list port
+ * Push Notifications API
+   - `REDIS_PUSHAPI_PORT_6379_TCP_ADDR` — Redis host for storing push tokens
+   - `REDIS_PUSHAPI_PORT_6379_TCP_PORT` — Redis port for storing push tokens
+   - `APN_CERT_FILEPATH` — Path to .pem file with APN certificate
+   - `APN_KEY_FILEPATH` — Path to .pem file with APN private key
+   - `NODE_ENV` - set to production to connect to the production gateway. Otherwise it will connect to the sandbox.
 
 AuthDB
 ------
@@ -151,4 +160,19 @@ Add user to the list of online players, returns the list.
       ...
       "bob"
     ]
+
+# Push Notifications API
+
+## Save Push Token [POST /<auth>/push-token]
+
+Saves user's push notifications token to database. Example Body:
+
+``` js
+{ username: 'alice',             // String, which user this token is for
+  app: 'substract-game',         // String, which app this token is for
+  type: 'apn',                   // String, which push notifications provider 
+                                 //         this token is for, `apn` or `gcm`
+                                 //         (see Token.TYPES)
+  value: 'alicesubstracttoken' } // token value
+```
 

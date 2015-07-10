@@ -11,6 +11,7 @@ app:
      - redisAuth:redis_auth
      - redisNotifications:redis_notifications
      - redisOnlineList:redis_onlinelist
+     - redisPush:redis_pushapi
     environment:
      - "TESTUSER_AUTH_TOKEN=DFDE4BBE-1F43-4EF0-9642-775C05336507"
      - "API_SECRET=BE295A7D-C10F-4448-9198-D5AB142E7546"
@@ -27,6 +28,11 @@ redisNotifications:
      - "REDIS_PASS=**None**"
 
 redisOnlineList:
+    image: tutum/redis:latest
+    environment:
+     - "REDIS_PASS=**None**"
+
+redisPush:
     image: tutum/redis:latest
     environment:
      - "REDIS_PASS=**None**"

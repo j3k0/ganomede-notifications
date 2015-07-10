@@ -9,7 +9,7 @@ RUN chown -R app /home/app
 USER app
 RUN npm install
 
-COPY Makefile config.js index.js newrelic.js coffeelint.json .eslintignore .eslintrc /home/app/code/
+COPY Makefile config.js index.js newrelic.js coffeelint.json .eslintignore .eslintrc worker.sh /home/app/code/
 COPY index.js /home/app/code/index.js
 COPY tests /home/app/code/tests
 COPY src /home/app/code/src
@@ -20,4 +20,4 @@ RUN chown -R app /home/app
 WORKDIR /home/app/code
 USER app
 RUN make check && make install
-CMD node_modules/.bin/forever index.js
+CMD node index.js
