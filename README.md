@@ -176,3 +176,10 @@ Saves user's push notifications token to database. Example Body:
   value: 'alicesubstracttoken' } // token value
 ```
 
+# Push Notifications Worker
+
+The server doesn't send push notifications, only add them to a task list. A worker will read from this task list and do the actual sending.
+
+Worker is found in src/push-api/sender-cli.coffee
+
+A way of running it continously is through the push-worker.sh script, that'll spawn one worker every second.
