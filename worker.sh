@@ -17,4 +17,16 @@ if [[ ! -z "$APN_CERT_BASE64" ]]; then
     export APN_CERT_FILEPATH="$TEMPDIR/cert.pem"
 fi
 
-./node_modules/.bin/coffee src/push-api/sender-cli.coffee
+if [[ -z "$WORKER_INTERVAL" ]]; then
+    WORKER_INTERVAL=1
+fi
+
+# Launch 1 worker per second.
+#
+# If worker can't finish its job under N seconds, 2 workers will run in parallel.
+# This is cheap autoscaling.
+while true; do
+    echo ./node_modules/.bin/coffee src/push-api/sender-cli.coffee
+    ./node_modules/.bin/coffee src/push-api/sender-cli.coffee &
+    sleep $WORKER_INTERVAL
+done
