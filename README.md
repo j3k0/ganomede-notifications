@@ -167,8 +167,7 @@ Add user to the list of online players, returns the list.
 Saves user's push notifications token to database. Example Body:
 
 ``` js
-{ username: 'alice',             // String, which user this token is for
-  app: 'substract-game',         // String, which app this token is for
+{ app: 'substract-game',         // String, which app this token is for
   type: 'apn',                   // String, which push notifications provider 
                                  //         this token is for, `apn` or `gcm`
                                  //         (see Token.TYPES)
