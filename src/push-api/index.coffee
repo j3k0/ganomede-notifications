@@ -10,7 +10,10 @@ log = require '../log'
 
 module.exports = (options={}) ->
   tokenStorage = options.tokenStorage || new TokenStorage(
-    redis.createClient(config.pushApi.redisPort, config.pushApi.redisHost)
+    redis.createClient(
+      config.pushApi.redisPort,
+      config.pushApi.redisHost,
+        no_ready_check: true
   )
 
   sender = options.sender || new Sender(tokenStorage.redis, tokenStorage)
