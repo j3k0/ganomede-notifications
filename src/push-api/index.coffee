@@ -14,6 +14,7 @@ module.exports = (options={}) ->
       config.pushApi.redisPort,
       config.pushApi.redisHost,
         no_ready_check: true
+    )
   )
 
   sender = options.sender || new Sender(tokenStorage.redis, tokenStorage)
@@ -23,9 +24,8 @@ module.exports = (options={}) ->
     port: config.authdb.port
   )
 
-  authMiddleware = helpers.restify.middlewares.authdb.create({
+  authMiddleware = helpers.restify.middlewares.authdb.create
     authdbClient: authdb
-  })
 
   savePushToken = (req, res, next) ->
     unless req.body && req.body.app && req.body.type && req.body.value &&
@@ -49,8 +49,8 @@ module.exports = (options={}) ->
       next()
 
   api = (prefix, server) ->
-    server.post "/#{prefix}/auth/:authToken/push-token",
-      authMiddleware, savePushToken
+    server.post("/#{prefix}/auth/:authToken/push-token",
+      authMiddleware, savePushToken)
 
   api.addPushNotification = sender.addNotification.bind(sender)
 
