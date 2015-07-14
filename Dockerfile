@@ -20,4 +20,4 @@ RUN chown -R app /home/app
 WORKDIR /home/app/code
 USER app
 RUN make check && make install
-CMD node index.js
+CMD node_modules/.bin/forever index.js
