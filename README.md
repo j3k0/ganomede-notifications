@@ -26,11 +26,12 @@ Notifications containing `.push` object will also be sent as push notifications 
 ``` js
 { "app": "triominos/v1"  // String, required  Which app to notify
 
-  "type": "someone_loves_someone",  // String, optional
-  "title": [ "Love {1}", "bob" ],   // String[], optional
-  "message": [ "Did you know? {1} loves {2}", "alice", "bob" ]  // String[], optional
+  "title": [ "localization-key", "args..." ],   // String[], optional
+  "message": [ "localization-key", "args..." ]  // String[], optional
 }
 ```
+
+`.push.title` and `.push.message` must be String arrays of at least 1 length containing localization key at `[0]` followed by any number of localization arguments. If either title, or message, or both are not present, notificaiton alert will default to `config.pushApi.apn.defaultAlert` string.
 
 Relations
 ---------
