@@ -19,13 +19,7 @@ class ApnSender
 
   # TODO
   # errors?
-  send: (payload, tokens, callback) ->
-    notification = new apn.Notification()
-    notification.expiry = config.pushApi.apn.expiry
-    notification.badge = config.pushApi.apn.badge
-    notification.sound = config.pushApi.apn.sound
-    notification.payload = payload
-
+  send: (notification, tokens, callback) ->
     devices = tokens.map (token) -> new apn.Device(token.data())
     @connection.pushNotification(notification, devices)
     @connection.once('completed', callback.bind(null, null))
@@ -56,7 +50,7 @@ class Sender
       if !sender
         throw new Error("No sender specified for #{type} token type")
 
-      fn = sender.send.bind(sender, task.convertPayload(type), tokens)
+      fn = sender.send.bind(sender, task.convert(type), tokens)
       sendFunctions.push(fn)
 
     # Exec those functions

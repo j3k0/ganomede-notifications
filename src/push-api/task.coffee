@@ -13,7 +13,11 @@
 # loc-key with #{type}_message
 # loc-args with message[1..n]
 
+util = require 'util'
+apn = require 'apn'
 Token = require './token'
+config = require '../../config'
+log = require '../log'
 
 class Task
   constructor: (@notification, @tokens) ->
@@ -26,33 +30,45 @@ class Task
     # Store result of converting @notification to provider format
     @converted = {}
 
-  convertPayload: (type) ->
-    # Only need to convert some certain type of messages
-    push = @notification.push
-    needsConverting = push && Array.isArray(push.message) &&
-      Array.isArray(push.title) && push.hasOwnProperty('type')
-
-    unless needsConverting
-      return @notification
-
+  convert: (type) ->
     unless @converted.hasOwnProperty(type)
       unless Task.converters.hasOwnProperty(type)
         throw new Error("#{type} convertion not supported")
 
-      @converted[type] = Task.converters[type](push)
+      @converted[type] = Task.converters[type](@notification)
 
     return @converted[type]
 
 Task.converters = {}
 
-Task.converters[Token.APN] = (push) ->
-  return {
-    'title': push.title[0]
-    'title-key': "#{push.type}_title"
-    'title-args': push.title.slice(1)
-    'body': push.message[0]
-    'loc-key': "#{push.type}_message"
-    'loc-args': push.message.slice(1)
-  }
+Task.converters[Token.APN] = (notification) ->
+  note = new apn.Notification()
+
+  note.expiry = Math.floor(Date.now() / 1000) + config.pushApi.apn.expiry
+  note.badge = config.pushApi.apn.badge
+  note.sound = config.pushApi.apn.sound
+  note.payload = notification
+  note.alert = Task.converters[Token.APN].alert(notification.push)
+
+  return note
+
+# TODO
+# replace placeholders with values (things like `{1}` within strings)
+Task.converters[Token.APN].alert = (push) ->
+  if util.isString(push)
+    return push
+  else if util.isObject(push)
+    return {
+      'title': push.title[0]
+      'title-loc-key': "#{push.type}_title"
+      'title-loc-args': push.title.slice(1)
+      'body': push.message[0]
+      'loc-key': "#{push.type}_message"
+      'loc-args': push.message.slice(1)
+    }
+  else
+    # Not sure what notification.alert should be while converting to APN.
+    log.warn 'Not sure what apnNotification.alert should be given push', push
+    return config.pushApi.apn.defaultAlert
 
 module.exports = Task

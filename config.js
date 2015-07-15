@@ -47,8 +47,9 @@ module.exports = {
       key: process.env.APN_KEY_FILEPATH ||
         path.join(__dirname, 'tests/push-api/key.pem'),
       // push messages
-      expiry: Math.floor(Date.now() / 1000) + 3600,
-      badge: 3,
+      defaultAlert: '\uD83D\uDCE7 \u2709 You have a new message',
+      expiry: 3600,
+      badge: 1,
       sound: 'ping.aiff'
     }
   }

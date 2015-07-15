@@ -53,7 +53,7 @@ describe 'Sender', () ->
 
         spy = sender.senders[token.type].send
         args = spy.firstCall.args
-        expectedFirstTwoArgs = [task.convertPayload(token.type), tokens]
+        expectedFirstTwoArgs = [task.convert(token.type), tokens]
 
         expect(spy.callCount).to.be(1)
         expect(args).to.have.length(3)
@@ -131,7 +131,7 @@ describe 'Sender', () ->
 
     if process.env.hasOwnProperty('TEST_APN_TOKEN')
       it 'sends notifications', (done) ->
-        apnSender.send task.convertPayload(token.type), task.tokens, (err) ->
+        apnSender.send task.convert(token.type), task.tokens, (err) ->
           expect(err).to.be(null)
           done()
     else
