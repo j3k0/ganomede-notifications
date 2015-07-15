@@ -17,6 +17,18 @@ Notificatinos from different services will be of different `type` and will conta
 
   "type": "invitation",            // String  Notification type (depends on the service)
   "data": {}                       // Object  Notification data (depends on the service and type)
+  "push": {}                       // Object  Optional, include if you want this notification to be also sent as push-notification to user devices.
+}
+```
+
+Notifications containing `.push` object will also be sent as push notifications to user devices. Payload of that push notification will contain original ganomede notification. Fields in `.push` describe how notification will be displayed to user.
+
+``` js
+{ "app": "triominos/v1"  // String, required  Which app to notify
+
+  "type": "someone_loves_someone",  // String, optional
+  "title": [ "Love {1}", "bob" ],   // String[], optional
+  "message": [ "Did you know? {1} loves {2}", "alice", "bob" ]  // String[], optional
 }
 ```
 
