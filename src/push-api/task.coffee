@@ -52,18 +52,13 @@ Task.converters[Token.APN] = (notification) ->
 
   return note
 
-# TODO
-# replace placeholders with values (things like `{1}` within strings)
 Task.converters[Token.APN].alert = (push) ->
-  if util.isString(push)
-    return push
-  else if util.isObject(push)
+  localized = Array.isArray(push.title) && Array.isArray(push.message)
+  if localized
     return {
-      'title': push.title[0]
-      'title-loc-key': "#{push.type}_title"
+      'title-loc-key': push.title[0]
       'title-loc-args': push.title.slice(1)
-      'body': push.message[0]
-      'loc-key': "#{push.type}_message"
+      'loc-key': push.message[0]
       'loc-args': push.message.slice(1)
     }
   else

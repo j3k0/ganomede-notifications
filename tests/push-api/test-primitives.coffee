@@ -71,9 +71,9 @@ describe 'TokenStorage', () ->
 describe 'Task', () ->
   token = Token.fromPayload(tokenData())
   push =
-    type: 'someone_loves_someone',
-    title: ['Love {1}', 'bob'],
-    message: ['Did you know? {1} loves {2}', 'alice', 'bob']
+    app: samples.notification().from
+    title: ['title-loc-key'],
+    message: ['message-loc-key', 'message-loc-arg-1', 'message-loc-arg-2']
   notification = samples.notification(push)
   task = new Task(notification, [token])
 
@@ -112,19 +112,13 @@ describe 'Task', () ->
       describe '.alert(push)', () ->
         alert = Task.converters[Token.APN].alert
 
-        it 'returns string when .push is a string', () ->
-          s = 'some string'
-          expect(alert(s)).to.be(s)
-
-        it 'returns object when .push is an object', () ->
+        it 'returns localization object when .push has 2 arrays', () ->
           expect(alert(push)).to.eql({
-            'title': 'Love {1}'
-            'title-loc-key': 'someone_loves_someone_title'
-            'title-loc-args': ['bob']
-            'body': 'Did you know? {1} loves {2}'
-            'loc-key': 'someone_loves_someone_message'
-            'loc-args': ['alice', 'bob']
+            'title-loc-key': 'title-loc-key'
+            'title-loc-args': []
+            'loc-key': 'message-loc-key'
+            'loc-args': ['message-loc-arg-1', 'message-loc-arg-2']
           })
 
         it 'returns default string from config in other cases', () ->
-          expect(alert()).to.be(config.pushApi.apn.defaultAlert)
+          expect(alert({})).to.be(config.pushApi.apn.defaultAlert)
