@@ -82,18 +82,20 @@ main = (testing) ->
 
     token = Token.fromPayload(
       username: 'alice'
-      app: 'game'
+      app: 'game-app/v1'
       type: 'apn'
       value: process.env.TEST_APN_TOKEN
     )
 
     notification =
-      from: 'game',
+      from: 'game-service',
       to: 'alice',
       type: 'invitation-created',
       data: {},
       timestamp: 1436269938903,
       id: 1
+      push:
+        app: 'game-app/v1'
 
     (require 'vasync').parallel
       funcs: [

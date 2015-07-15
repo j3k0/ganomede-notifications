@@ -67,7 +67,7 @@ class Sender
     unless notification
       return callback(null, null)
 
-    @tokenStorage.get notification.to, notification.from, (err, tokens) ->
+    @tokenStorage.get notification.to, notification.push.app, (err, tokens) ->
       if tokens.length == 0
         log.warn 'Found no push tokens for sending notification', notification
 
