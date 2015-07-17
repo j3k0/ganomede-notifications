@@ -16,8 +16,6 @@ CONCURRENT_CONNECTIONS = 4
 debug = if !config.debug then () -> else () ->
   console.log.apply(console, arguments)
 
-# TODO:
-# better error handling
 class Producer extends stream.Readable
   constructor: (@queue, concurrency=CONCURRENT_CONNECTIONS) ->
     super({objectMode: true, highWaterMark: concurrency})
