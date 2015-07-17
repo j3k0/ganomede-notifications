@@ -1,7 +1,7 @@
 # Redis queue that stores push notifications to be sent.
 
 vasync = require 'vasync'
-Task = require './Task'
+Task = require './task'
 config = require '../../config'
 log = require '../log'
 
