@@ -43,8 +43,7 @@ describe 'Sender', () ->
 
     if process.env.hasOwnProperty('TEST_APN_TOKEN')
       it 'sends notifications', (done) ->
-        apnSender.send task.convert(token.type), task.tokens, (err) ->
-          expect(err).to.be(null)
-          done()
+        apnSender.send task.convert(token.type), task.tokens
+        apnSender.connection.once 'completed', done
     else
       it 'sends notifications (please specify TEST_APN_TOKEN env var)'

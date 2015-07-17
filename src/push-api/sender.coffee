@@ -12,10 +12,9 @@ class ApnSender
 
   # TODO
   # errors?
-  send: (notification, tokens, callback) ->
+  send: (notification, tokens) ->
     devices = tokens.map (token) -> new apn.Device(token.data())
     @connection.pushNotification(notification, devices)
-    @connection.once('completed', callback.bind(null, null))
 
   close: () ->
     @connection.shutdown()
