@@ -5,6 +5,7 @@ all: install test
 check: install
 	./node_modules/.bin/eslint src/
 	./node_modules/.bin/coffeelint -q src tests
+	grep -R -n -A5 -i TODO src tests
 
 test: check
 	./node_modules/.bin/mocha -b --recursive --compilers coffee:coffee-script/register tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
