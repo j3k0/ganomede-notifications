@@ -7,11 +7,8 @@ config = require '../../config'
 # https://github.com/argon/node-apn/blob/master/doc/connection.markdown
 class ApnSender
   constructor: (options) ->
-    @connection = new apn.Connection(
-      production: !config.debug,
-      cert: options.cert,
-      key: options.key
-    )
+    options.production = options.production || !config.debug
+    @connection = new apn.Connection(options)
 
   # TODO
   # errors?
