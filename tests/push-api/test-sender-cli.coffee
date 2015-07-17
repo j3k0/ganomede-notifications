@@ -5,6 +5,7 @@ sinon = require 'sinon'
 Sender = require '../../src/push-api/sender'
 SenderCli = require '../../src/push-api/sender-cli'
 Token = require '../../src/push-api/token'
+Queue = require '../../src/push-api/queue'
 TokenStorage = require '../../src/push-api/token-storage'
 samples = require './samples'
 
@@ -12,11 +13,12 @@ describe 'SenderCli', () ->
   redis = fakeredis.createClient(__filename)
   storage = new TokenStorage(redis)
 
-  sender = new Sender(redis, storage, samples.fakeSenders())
+  queue = new Queue(redis, storage)
+  sender = new Sender(samples.fakeSenders())
   sendOriginal = sender.send
   sendSpy = sinon.spy(sender.send)
 
-  cli = new SenderCli(sender)
+  cli = new SenderCli(sender, queue)
   tickOriginal = cli.tick
   tickSpy = sinon.spy(cli.tick)
 
@@ -40,9 +42,9 @@ describe 'SenderCli', () ->
       vasync.parallel
         funcs: [
           storage.add.bind(storage, token)
-          sender.addNotification.bind(sender, samples.notification())
-          sender.addNotification.bind(sender, samples.notification())
-          sender.addNotification.bind(sender, samples.notification())
+          queue.add.bind(queue, samples.notification())
+          queue.add.bind(queue, samples.notification())
+          queue.add.bind(queue, samples.notification())
         ]
       , done
 

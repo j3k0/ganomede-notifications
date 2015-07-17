@@ -6,15 +6,19 @@ config = require '../../config'
 Token = require './token'
 TokenStorage = require './token-storage'
 Sender = require './sender'
+Queue = require './queue'
 log = (require '../log').child({SenderCli: true})
 
 class SenderCli extends events.EventEmitter
-  constructor: (@sender) ->
+  constructor: (@sender, @queue) ->
     unless @sender instanceof Sender
       throw new Error('SenderRequired')
 
+    unless @queue instanceof Queue
+      throw new Error('QueueRequired')
+
     onTask = @onTask.bind(@)
-    processNextTask = @sender.nextTask.bind(@sender, onTask)
+    processNextTask = @queue.get.bind(@queue, onTask)
     @tick = process.nextTick.bind(process, processNextTask)
 
   done: (err) ->
@@ -54,8 +58,9 @@ main = (testing) ->
   )
 
   storage = new TokenStorage(client)
-  sender = new Sender(client, storage, senders)
-  cli = new SenderCli(sender)
+  queue = new Queue(client, storage)
+  sender = new Sender(senders)
+  cli = new SenderCli(sender, queue)
 
   onDone = (err) ->
     if (err)
@@ -100,7 +105,7 @@ main = (testing) ->
     (require 'vasync').parallel
       funcs: [
         storage.add.bind(storage, token)
-        sender.addNotification.bind(sender, notification)
+        queue.add.bind(queue, notification)
       ]
     , (err, results) ->
       if err then onDone(err) else start()

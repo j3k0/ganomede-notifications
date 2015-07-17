@@ -1,19 +1,3 @@
-# "push": {
-#   "type": "someone_loves_someone",
-#   "title": [ "Love {1}", "bob" ],
-#   "message": [ "Did you know? {1} loves {2}", "alice", "bob" ],
-# }
-#
-# Should allow to fill APN:
-#
-# title with title[0] with arguments inserted
-# title-key with #{type}_title
-# title-args with title[1..n]
-# body with message[0] with arguments inserted
-# loc-key with #{type}_message
-# loc-args with message[1..n]
-
-util = require 'util'
 apn = require 'apn'
 Token = require './token'
 config = require '../../config'
