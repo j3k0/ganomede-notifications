@@ -48,10 +48,6 @@ class Queue
           notification: notification
         return callback(err)
 
-      if tokens.length == 0
-        log.warn 'Found no push tokens for sending notification', notification
-        return callback(null, null)
-
       callback(null, new Task(notification, tokens))
 
   get: (callback) ->

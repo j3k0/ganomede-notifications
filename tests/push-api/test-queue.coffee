@@ -62,10 +62,13 @@ describe 'Queue', () ->
         expect(task.tokens[0]).to.be.a(Token)
         done()
 
-    it 'returns null when no tokens found for notification reciever', (done) ->
+    it 'when no tokens found for notification receiver,
+        returns task with 0 tokens',
+    (done) ->
       queue.get (err, task) ->
         expect(err).to.be(null)
-        expect(task).to.be(null)
+        expect(task.tokens).to.be.an(Array)
+        expect(task.tokens).to.have.length(0)
         done()
 
     it 'returns null when no items left in the list', (done) ->
