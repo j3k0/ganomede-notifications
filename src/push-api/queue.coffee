@@ -48,6 +48,9 @@ class Queue
           notification: notification
         return callback(err)
 
+      if notification.secret
+        delete notification.secret
+
       callback(null, new Task(notification, tokens))
 
   get: (callback) ->
