@@ -34,6 +34,10 @@ Task.converters[Token.APN] = (notification) ->
   note.payload = notification
   note.alert = Task.converters[Token.APN].alert(notification.push)
 
+  # Make sure not to expose API_SECRET!
+  if notification.secret
+    delete note.payload.secret
+
   return note
 
 Task.converters[Token.APN].alert = (push) ->
