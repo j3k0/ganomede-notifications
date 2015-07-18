@@ -1,5 +1,11 @@
 # Sending push notifications from redis queue.
 
+# Use New Relic if LICENSE_KEY has been specified.
+if process.env.NEW_RELIC_LICENSE_KEY
+  if !process.env.NEW_RELIC_APP_NAME
+    process.env.NEW_RELIC_APP_NAME = "push-worker/v1"
+  require 'newrelic'
+
 stream = require 'stream'
 redis = require 'redis'
 config = require '../../config'
