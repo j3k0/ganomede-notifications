@@ -27,6 +27,6 @@ fi
 # This is cheap autoscaling.
 while true; do
     # echo ./node_modules/.bin/coffee src/push-api/sender-cli.coffee
-    time ./node_modules/.bin/coffee src/push-api/sender-cli.coffee
+    ./node_modules/.bin/coffee src/push-api/sender-cli.coffee
     sleep $WORKER_INTERVAL
 done

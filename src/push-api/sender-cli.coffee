@@ -36,8 +36,8 @@ class Producer extends stream.Readable
 
       if task
         debug('read %d', task.notification.id)
-      else
-        log.info 'Queue is empty'
+      # else
+      #  log.info 'Queue is empty'
 
       @push(task)
 
@@ -102,14 +102,14 @@ main = (testing) ->
   consumer = new Consumer(sender)
 
   producer.on 'end', () ->
-    log.info 'producer end'
+    # log.info 'producer end'
     client.quit()
 
   producer.on 'error', (err) ->
     log.info 'producer error', err
 
   consumer.on 'finish', () ->
-    log.info 'consumer end'
+    # log.info 'consumer end'
     apnSender.close()
     process.exit()
 
