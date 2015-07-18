@@ -13,14 +13,14 @@ Token = require './token'
 TokenStorage = require './token-storage'
 Sender = require './sender'
 Queue = require './queue'
-log = (require '../log').child({SenderCli: true})
+log = (require '../log').child(SenderCli:true)
 
 # How many connections to Apple
 # (not sure if this is working with APN atm)
 CONCURRENT_CONNECTIONS = 4
 
 debug = if !config.debug then () -> else () ->
-  console.log.apply(console, arguments)
+  log.debug.apply(log.debug, arguments)
 
 class Producer extends stream.Readable
   constructor: (@queue, concurrency=CONCURRENT_CONNECTIONS) ->
@@ -41,7 +41,7 @@ class Producer extends stream.Readable
         return process.nextTick(@_read.bind(@))
 
       if task
-        debug('read %d', task.notification.id)
+        debug 'read', id:task.notification.id
       # else
       #  log.info 'Queue is empty'
 
@@ -57,7 +57,7 @@ class Consumer extends stream.Writable
       readyFunctions: []
 
     connection = @sender.senders[Token.APN].connection
-    connection.on 'transmitted', Consumer.onTransmitted.bind(@)
+    connection.on 'transmitted', @onTransmitted.bind(@)
 
   # The idea is that we ready for more, when `transmitted` event occurs
   # N times (where N is number of tokens for each task).
@@ -65,7 +65,7 @@ class Consumer extends stream.Writable
   # is adjustable by concurrency inside Producer ctor.
   taskAdded: (nTokens, readyFn) ->
     @state.nWaiting += nTokens
-    debug('state %j', @state)
+    debug 'taskAdded', state:@state
 
     if @canAddMoreTasks()
       readyFn()
@@ -75,7 +75,7 @@ class Consumer extends stream.Writable
   canAddMoreTasks: () ->
     return @state.nWaiting < @state.nMax
 
-  @onTransmitted = (notification, device) ->
+  onTransmitted: (notification, device) ->
     @state.nWaiting -= 1
     if @canAddMoreTasks()
       readyFn = @state.readyFunctions.shift()
@@ -83,7 +83,7 @@ class Consumer extends stream.Writable
         readyFn()
 
   _write: (task, encoding, readyForMore) ->
-    debug('written %d', task.notification.id)
+    debug 'written', id:task.notification.id
     @taskAdded(task.tokens.length, readyForMore)
     @sender.send task, () ->
 
