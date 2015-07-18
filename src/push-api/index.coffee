@@ -4,7 +4,7 @@ AuthDB = require 'authdb'
 helpers = require 'ganomede-helpers'
 Token = require './token'
 TokenStorage = require './token-storage'
-Sender = require './sender'
+Queue = require './queue'
 config = require '../../config'
 log = require '../log'
 
@@ -17,7 +17,7 @@ module.exports = (options={}) ->
     )
   )
 
-  sender = options.sender || new Sender(tokenStorage.redis, tokenStorage)
+  queue = new Queue(tokenStorage.redis, tokenStorage)
 
   authdb = options.authdb || AuthDB.createClient(
     host: config.authdb.host
@@ -52,6 +52,6 @@ module.exports = (options={}) ->
     server.post("/#{prefix}/auth/:authToken/push-token",
       authMiddleware, savePushToken)
 
-  api.addPushNotification = sender.addNotification.bind(sender)
+  api.addPushNotification = queue.add.bind(queue)
 
   return api

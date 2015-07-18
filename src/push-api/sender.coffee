@@ -1,45 +1,26 @@
 apn = require 'apn'
 vasync = require 'vasync'
 config = require '../../config'
-Token = require './token'
-Task = require './task'
-log = require '../log'
-config = require '../../config'
 
 # TODO
 # listen for errors:
 # https://github.com/argon/node-apn/blob/master/doc/connection.markdown
 class ApnSender
   constructor: (options) ->
-    @connection = new apn.Connection(
-      production: !config.debug,
-      cert: options.cert,
-      key: options.key
-    )
+    options.production = options.production || !config.debug
+    @connection = new apn.Connection(options)
 
   # TODO
   # errors?
-  send: (payload, tokens, callback) ->
-    notification = new apn.Notification()
-    notification.expiry = config.pushApi.apn.expiry
-    notification.badge = config.pushApi.apn.badge
-    notification.sound = config.pushApi.apn.sound
-    notification.payload = payload
-
+  send: (notification, tokens) ->
     devices = tokens.map (token) -> new apn.Device(token.data())
     @connection.pushNotification(notification, devices)
-    @connection.once('completed', callback.bind(null, null))
 
   close: () ->
     @connection.shutdown()
 
 class Sender
-  constructor: (@redis, @tokenStorage, @senders={}) ->
-    unless @redis
-      throw new Error('RedisClientRequired')
-
-    unless @tokenStorage
-      throw new Error('TokenStorageRequired')
+  constructor: (@senders={}) ->
 
   # Sends push notification from task.notification for each one of task.tokens.
   send: (task, callback) ->
@@ -56,46 +37,11 @@ class Sender
       if !sender
         throw new Error("No sender specified for #{type} token type")
 
-      fn = sender.send.bind(sender, task.convertPayload(type), tokens)
+      fn = sender.send.bind(sender, task.convert(type), tokens)
       sendFunctions.push(fn)
 
     # Exec those functions
     vasync.parallel({funcs: sendFunctions}, callback)
-
-  # Look into redis list for new push notifications to be send.
-  # If there are notification, retrieve push tokens for them.
-  # callback(err, task)
-  _rpop: (callback) ->
-    @redis.rpop config.pushApi.notificationsPrefix, (err, notificationJson) ->
-      callback(err, if err then null else JSON.parse(notificationJson))
-
-  _task: (notification, callback) ->
-    unless notification
-      return callback(null, null)
-
-    @tokenStorage.get notification.to, notification.from, (err, tokens) ->
-      if tokens.length == 0
-        log.warn 'Found no push tokens for sending notification', notification
-
-      ok = !err && tokens.length
-      callback(err, if ok then new Task(notification, tokens) else null)
-
-  nextTask: (callback) ->
-    vasync.waterfall [
-      @_rpop.bind(@)
-      @_task.bind(@)
-    ], callback
-
-  # Add notification
-  addNotification: (notification, callback=->) ->
-    json = JSON.stringify(notification)
-    @redis.lpush config.pushApi.notificationsPrefix, json, (err, newLength) ->
-      if (err)
-        log.error 'Sender#addNotification() failed',
-          err: err
-          notification: notification
-
-      callback(err)
 
 Sender.ApnSender = ApnSender
 module.exports = Sender

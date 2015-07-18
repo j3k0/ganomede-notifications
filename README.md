@@ -17,8 +17,21 @@ Notificatinos from different services will be of different `type` and will conta
 
   "type": "invitation",            // String  Notification type (depends on the service)
   "data": {}                       // Object  Notification data (depends on the service and type)
+  "push": {}                       // Object  Optional, include if you want this notification to be also sent as push-notification to user devices.
 }
 ```
+
+Notifications containing `.push` object will also be sent as push notifications to user devices. Payload of that push notification will contain original ganomede notification. Fields in `.push` describe how notification will be displayed to user.
+
+``` js
+{ "app": "triominos/v1"  // String, required  Which app to notify
+
+  "title": [ "localization-key", "args..." ],   // String[], optional
+  "message": [ "localization-key", "args..." ]  // String[], optional
+}
+```
+
+`.push.title` and `.push.message` must be String arrays of at least 1 length containing localization key at `[0]` followed by any number of localization arguments. If either title, or message, or both are not present, notificaiton alert will default to `config.pushApi.apn.defaultAlert` string.
 
 Relations
 ---------

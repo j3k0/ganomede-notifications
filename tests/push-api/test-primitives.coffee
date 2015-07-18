@@ -1,3 +1,4 @@
+apn = require 'apn'
 expect = require 'expect.js'
 fakeRedis = require 'fakeredis'
 config = require '../../config'
@@ -70,9 +71,9 @@ describe 'TokenStorage', () ->
 describe 'Task', () ->
   token = Token.fromPayload(tokenData())
   push =
-    type: 'someone_loves_someone',
-    title: ['Love {1}', 'bob'],
-    message: ['Did you know? {1} loves {2}', 'alice', 'bob']
+    app: samples.notification().from
+    title: ['title-loc-key'],
+    message: ['message-loc-key', 'message-loc-arg-1', 'message-loc-arg-2']
   notification = samples.notification(push)
   task = new Task(notification, [token])
 
@@ -85,34 +86,39 @@ describe 'Task', () ->
     it 'requires tokens', () ->
       expect(create).withArgs({}).to.throwException(/TokensRequired/)
 
-  describe '#convertPayload()', () ->
-    it 'converts push payload according to token.type', () ->
-      expected = Task.converters[Token.APN](push)
-      expect(expected).to.eql(task.convertPayload(token.type))
-
-    it 'returns notification when conversion isn\'t required', () ->
-      t = new Task(samples.notification(), [])
-      expect(t.convertPayload(Token.APN)).to.eql(samples.notification())
+  describe '#convert()', () ->
+    it 'converts notification according to token.type', () ->
+      expected = Task.converters[Token.APN](notification)
+      expect(expected).to.eql(task.convert(token.type))
 
     it 'doesnt convert same token type twice returning from cache instead',
     () ->
       # Checks that we got exact reference to object inside inner task cache
       # and not new object created by one of the Task.converters
-      expect(task.convertPayload(token.type)).to.be(task.converted[token.type])
+      expect(task.convert(token.type)).to.be(task.converted[token.type])
 
     it 'throws if convertion to token.type is not supported', () ->
       uknownType = 'HAHA'
       error = new RegExp("#{uknownType} convertion not supported")
-      convert = task.convertPayload.bind(task)
+      convert = task.convert.bind(task)
       expect(convert).withArgs(uknownType).to.throwException(error)
 
   describe 'Task.converters', () ->
-    it 'Token.APN', () ->
-      expect(Task.converters[Token.APN](push)).to.eql(
-        'title': 'Love {1}'
-        'title-key': 'someone_loves_someone_title'
-        'title-args': ['bob']
-        'body': 'Did you know? {1} loves {2}'
-        'loc-key': 'someone_loves_someone_message'
-        'loc-args': ['alice', 'bob']
-      )
+    describe 'Token.APN', () ->
+      it 'converts to apn.Notification', () ->
+        apnNote = Task.converters[Token.APN](notification)
+        expect(apnNote).to.be.a(apn.Notification)
+
+      describe '.alert(push)', () ->
+        alert = Task.converters[Token.APN].alert
+
+        it 'returns localization object when .push has 2 arrays', () ->
+          expect(alert(push)).to.eql({
+            'title-loc-key': 'title-loc-key'
+            'title-loc-args': []
+            'loc-key': 'message-loc-key'
+            'loc-args': ['message-loc-arg-1', 'message-loc-arg-2']
+          })
+
+        it 'returns default string from config in other cases', () ->
+          expect(alert({})).to.be(config.pushApi.apn.defaultAlert)

@@ -9,18 +9,17 @@ exports.tokenData = () ->
     value: 'alicesubstracttoken'
   }
 
-exports.notification = (push, reciever='alice') ->
+exports.notification = (push={}, reciever='alice') ->
   ret =
     from: 'substract-game/v1',
     to: reciever,
     type: 'invitation-created',
     data: {},
+    push: push,
     timestamp: 1436269938903,
     id: 1
 
-  if push
-    ret.push = push
-
+  ret.push.app = ret.push.app || ret.from
   return ret
 
 exports.fakeSenders = () ->
