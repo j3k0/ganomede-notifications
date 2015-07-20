@@ -56,6 +56,7 @@ class Consumer extends stream.Writable
       nMax: concurrency
       nWaiting: 0
       readyFunctions: []
+      finishCallback: null
 
     connection = @sender.senders[Token.APN].connection
     connection.on 'transmitted', @onTransmitted.bind(@)
@@ -77,16 +78,29 @@ class Consumer extends stream.Writable
     return @state.nWaiting < @state.nMax
 
   onTransmitted: (notification, device) ->
+    debug 'transmitted', notification.payload.id
+
     @state.nWaiting -= 1
     if @canAddMoreTasks()
       readyFn = @state.readyFunctions.shift()
       if readyFn
         readyFn()
 
+    # When no more tasks will be added, finishCallback will be set,
+    # call it when everything in the queue is transmitted.
+    if @state.finishCallback && (@state.nWaiting == 0)
+      @state.finishCallback()
+
   _write: (task, encoding, readyForMore) ->
     debug 'written', id:task.notification.id
+    @sender.send task
     @taskAdded(task.tokens.length, readyForMore)
-    @sender.send task, () ->
+
+  # Call when no more tasks will be added
+  finishUp: (callback) ->
+    @state.finishCallback = callback
+    if @state.nWaiting == 0
+      callback()
 
 main = (testing) ->
   client = redis.createClient(
@@ -109,16 +123,25 @@ main = (testing) ->
   consumer = new Consumer(sender)
 
   producer.on 'end', () ->
-    # log.info 'producer end'
     client.quit()
 
   producer.on 'error', (err) ->
     log.info 'producer error', err
 
   consumer.on 'finish', () ->
-    # log.info 'consumer end'
+    debug 'finishing up with', consumer.state
     apnSender.close()
-    process.exit()
+
+    consumer.finishUp () ->
+      debug 'finished up with', consumer.state
+
+      # Sometimes `apn` does close connection, sometimes it doesn't.
+      # Give it a moment before we force it.
+      exit = () ->
+        debug('forced exit')
+        process.exit(0)
+
+      setTimeout(exit, 500)
 
   consumer.on 'error', (err) ->
     log.info 'consumer error', err
@@ -133,7 +156,7 @@ main = (testing) ->
 
   # Dump 100 notifications to redis and token for user.
   populateRedis = (callback) ->
-    objects = [1..100].map (i) -> JSON.stringify(
+    objects = [1..10].map (i) -> JSON.stringify(
       to: 'alice'
       id: i
       push: {
