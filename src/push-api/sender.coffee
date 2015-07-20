@@ -14,12 +14,13 @@ class ApnSender
 
   # TODO
   # errors?
-  send: (notification, tokens) ->
+  send: (notification, tokens, callback=->) ->
     @log.info "send",
       tokens:tokens
       notification:notification
     devices = tokens.map (token) -> new apn.Device(token.data())
     @connection.pushNotification(notification, devices)
+    setImmediate(callback)
 
   close: () ->
     @connection.shutdown()
@@ -28,7 +29,7 @@ class Sender
   constructor: (@senders={}) ->
 
   # Sends push notification from task.notification for each one of task.tokens.
-  send: (task, callback) ->
+  send: (task, callback=->) ->
     # Group tokens by type
     groupedTokens = {}
     task.tokens.forEach (token) ->
