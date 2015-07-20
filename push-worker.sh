@@ -13,7 +13,7 @@ fi
 
 if [[ ! -z "$APN_CERT_BASE64" ]]; then
     echo "$APN_CERT_BASE64" | base64 -d > "$TEMPDIR/cert.pem"
-    echo "Extracted cert to $TEMPDIR/key.pem"
+    echo "Extracted cert to $TEMPDIR/cert.pem"
     export APN_CERT_FILEPATH="$TEMPDIR/cert.pem"
 fi
 
