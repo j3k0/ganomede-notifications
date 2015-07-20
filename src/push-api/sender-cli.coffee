@@ -56,6 +56,8 @@ class Consumer extends stream.Writable
 
     connection = @sender.senders[Token.APN].connection
     connection.on 'transmitted', @onTransmitted.bind(@)
+    connection.on 'transmissionError', (code, notification, device) =>
+      @emit('error', code, notification, device.toString())
 
   # The idea is that we ready for more, when `transmitted` event occurs
   # N times (where N is number of tokens for each task).
@@ -118,16 +120,16 @@ main = (testing) ->
   producer = new Producer(queue)
   consumer = new Consumer(sender)
 
+  # redis queue is empty
   producer.on 'end', () ->
     client.quit()
 
-  producer.on 'error', (err) ->
-    log.info 'producer error', err
-
+  # all the tasks are enqueued to be sent or sent
   consumer.on 'finish', () ->
     debug 'finishing up with', consumer.state
     apnSender.close()
 
+    # wait for remaining tasks to be sent, and exit
     consumer.finishUp () ->
       debug 'finished up with', consumer.state
 
@@ -139,8 +141,14 @@ main = (testing) ->
 
       setTimeout(exit, 500)
 
-  consumer.on 'error', (err) ->
-    log.info 'consumer error', err
+  # something wrong with RPOPing from redis
+  producer.on 'error', (err) ->
+    log.error 'producer error', err
+
+  # apn transmission failed
+  consumer.on 'error', (code, notification, token) ->
+    log.error "consumer error: code `%s` for token `%s`", code, token,
+      notification
 
   # Start callbacking
   start = (err) ->
