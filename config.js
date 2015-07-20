@@ -36,16 +36,25 @@ module.exports = {
   },
 
   pushApi: {
+    // Redis and its queues
     redisHost: process.env.REDIS_PUSHAPI_PORT_6379_TCP_ADDR || 'localhost',
     redisPort: +process.env.REDIS_PUSHAPI_PORT_6379_TCP_PORT || 6379,
     tokensPrefix: [unversionedApi, 'push-tokens'].join(':'),
     notificationsPrefix: [unversionedApi, 'push-notifications'].join(':'),
+
+    // When sending push notifications, sender cli will enqueue up to this
+    // number of Redis waiting notifications (RPOP it from redis and add
+    // to send queue).
+    cliReadAhead: 16,
+
+    // Apple related
     apn: {
       // connection
       cert: process.env.APN_CERT_FILEPATH ||
         path.join(__dirname, 'tests/push-api/cert.pem'),
       key: process.env.APN_KEY_FILEPATH ||
         path.join(__dirname, 'tests/push-api/key.pem'),
+      maxConnections: 2,
       // push messages
       defaultAlert: '\uD83D\uDCE7 \u2709 You have a new message',
       expiry: 3600,

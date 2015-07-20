@@ -15,16 +15,13 @@ Sender = require './sender'
 Queue = require './queue'
 log = (require '../log').child(SenderCli:true)
 
-# How many connections to Apple
-# (not sure if this is working with APN atm)
-CONCURRENT_CONNECTIONS = 4
-
 debug = if !config.debug then () -> else () ->
-  log.debug.apply(log.debug, arguments)
+  # console.log.apply(console, arguments)
+  log.debug.apply(log, arguments)
 
 class Producer extends stream.Readable
-  constructor: (@queue, concurrency=CONCURRENT_CONNECTIONS) ->
-    super({objectMode: true, highWaterMark: concurrency})
+  constructor: (@queue) ->
+    super({objectMode: true, highWaterMark: config.pushApi.cliReadAhead})
 
   _read: (size) ->
     @queue.get (err, task) =>
@@ -48,21 +45,24 @@ class Producer extends stream.Readable
       @push(task)
 
 class Consumer extends stream.Writable
-  constructor: (@sender, concurrency=CONCURRENT_CONNECTIONS) ->
+  constructor: (@sender) ->
     super({objectMode: true})
 
     @state =
-      nMax: concurrency
+      nMax: config.pushApi.cliReadAhead
       nWaiting: 0
       readyFunctions: []
+      finishCallback: null
 
     connection = @sender.senders[Token.APN].connection
     connection.on 'transmitted', @onTransmitted.bind(@)
+    connection.on 'transmissionError', (code, notification, device) =>
+      @emit('error', code, notification, device.toString())
 
   # The idea is that we ready for more, when `transmitted` event occurs
   # N times (where N is number of tokens for each task).
   # That way Producer won't buffer too many of notifications and "too many"
-  # is adjustable by concurrency inside Producer ctor.
+  # is adjustable by config.pushApi.cliReadAhead.
   taskAdded: (nTokens, readyFn) ->
     @state.nWaiting += nTokens
     debug 'taskAdded', state:@state
@@ -76,16 +76,29 @@ class Consumer extends stream.Writable
     return @state.nWaiting < @state.nMax
 
   onTransmitted: (notification, device) ->
+    debug 'transmitted', notification.payload.id
+
     @state.nWaiting -= 1
     if @canAddMoreTasks()
       readyFn = @state.readyFunctions.shift()
       if readyFn
         readyFn()
 
+    # When no more tasks will be added, finishCallback will be set,
+    # call it when everything in the queue is transmitted.
+    if @state.finishCallback && (@state.nWaiting == 0)
+      @state.finishCallback()
+
   _write: (task, encoding, readyForMore) ->
     debug 'written', id:task.notification.id
+    @sender.send task
     @taskAdded(task.tokens.length, readyForMore)
-    @sender.send task, () ->
+
+  # Call when no more tasks will be added
+  finishUp: (callback) ->
+    @state.finishCallback = callback
+    if @state.nWaiting == 0
+      callback()
 
 main = (testing) ->
   client = redis.createClient(
@@ -100,27 +113,42 @@ main = (testing) ->
     cert: config.pushApi.apn.cert
     key: config.pushApi.apn.key
     buffersNotifications: false
-    maxConnections: CONCURRENT_CONNECTIONS
+    maxConnections: config.pushApi.apn.maxConnections
   )
   sender = new Sender(senders)
 
   producer = new Producer(queue)
   consumer = new Consumer(sender)
 
+  # redis queue is empty
   producer.on 'end', () ->
-    # log.info 'producer end'
     client.quit()
 
-  producer.on 'error', (err) ->
-    log.info 'producer error', err
-
+  # all the tasks are enqueued to be sent or sent
   consumer.on 'finish', () ->
-    # log.info 'consumer end'
+    debug 'finishing up with', consumer.state
     apnSender.close()
-    process.exit()
 
-  consumer.on 'error', (err) ->
-    log.info 'consumer error', err
+    # wait for remaining tasks to be sent, and exit
+    consumer.finishUp () ->
+      debug 'finished up with', consumer.state
+
+      # Sometimes `apn` does close connection, sometimes it doesn't.
+      # Give it a moment before we force it.
+      exit = () ->
+        debug('forced exit')
+        process.exit(0)
+
+      setTimeout(exit, 500)
+
+  # something wrong with RPOPing from redis
+  producer.on 'error', (err) ->
+    log.error 'producer error', err
+
+  # apn transmission failed
+  consumer.on 'error', (code, notification, token) ->
+    log.error "consumer error: code `%s` for token `%s`", code, token,
+      notification
 
   # Start callbacking
   start = (err) ->
