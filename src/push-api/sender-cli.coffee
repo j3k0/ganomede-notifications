@@ -20,7 +20,8 @@ log = (require '../log').child(SenderCli:true)
 CONCURRENT_CONNECTIONS = 4
 
 debug = if !config.debug then () -> else () ->
-  log.debug.apply(log.debug, arguments)
+  # console.log.apply(console, arguments)
+  log.debug.apply(log, arguments)
 
 class Producer extends stream.Readable
   constructor: (@queue, concurrency=CONCURRENT_CONNECTIONS) ->
