@@ -15,17 +15,13 @@ Sender = require './sender'
 Queue = require './queue'
 log = (require '../log').child(SenderCli:true)
 
-# How many connections to Apple
-# (not sure if this is working with APN atm)
-CONCURRENT_CONNECTIONS = 4
-
 debug = if !config.debug then () -> else () ->
   # console.log.apply(console, arguments)
   log.debug.apply(log, arguments)
 
 class Producer extends stream.Readable
-  constructor: (@queue, concurrency=CONCURRENT_CONNECTIONS) ->
-    super({objectMode: true, highWaterMark: concurrency})
+  constructor: (@queue) ->
+    super({objectMode: true, highWaterMark: config.pushApi.cliReadAhead})
 
   _read: (size) ->
     @queue.get (err, task) =>
@@ -49,11 +45,11 @@ class Producer extends stream.Readable
       @push(task)
 
 class Consumer extends stream.Writable
-  constructor: (@sender, concurrency=CONCURRENT_CONNECTIONS) ->
+  constructor: (@sender) ->
     super({objectMode: true})
 
     @state =
-      nMax: concurrency
+      nMax: config.pushApi.cliReadAhead
       nWaiting: 0
       readyFunctions: []
       finishCallback: null
@@ -64,7 +60,7 @@ class Consumer extends stream.Writable
   # The idea is that we ready for more, when `transmitted` event occurs
   # N times (where N is number of tokens for each task).
   # That way Producer won't buffer too many of notifications and "too many"
-  # is adjustable by concurrency inside Producer ctor.
+  # is adjustable by config.pushApi.cliReadAhead.
   taskAdded: (nTokens, readyFn) ->
     @state.nWaiting += nTokens
     debug 'taskAdded', state:@state
@@ -115,7 +111,7 @@ main = (testing) ->
     cert: config.pushApi.apn.cert
     key: config.pushApi.apn.key
     buffersNotifications: false
-    maxConnections: CONCURRENT_CONNECTIONS
+    maxConnections: config.pushApi.apn.maxConnections
   )
   sender = new Sender(senders)
 
@@ -156,7 +152,7 @@ main = (testing) ->
 
   # Dump 100 notifications to redis and token for user.
   populateRedis = (callback) ->
-    objects = [1..10].map (i) -> JSON.stringify(
+    objects = [1..100].map (i) -> JSON.stringify(
       to: 'alice'
       id: i
       push: {
