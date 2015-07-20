@@ -25,18 +25,21 @@ class Task
 
 Task.converters = {}
 
+clone = (obj) -> JSON.parse(JSON.stringify(obj))
+
 Task.converters[Token.APN] = (notification) ->
   note = new apn.Notification()
 
   note.expiry = Math.floor(Date.now() / 1000) + config.pushApi.apn.expiry
   note.badge = config.pushApi.apn.badge
   note.sound = config.pushApi.apn.sound
-  note.payload = notification
+  note.payload = clone(notification)
   note.alert = Task.converters[Token.APN].alert(notification.push)
 
   # Make sure not to expose API_SECRET!
   if notification.secret
     delete note.payload.secret
+  delete note.payload.push
 
   return note
 
