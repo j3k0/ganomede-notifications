@@ -23,7 +23,8 @@ describe 'Queue', () ->
     messageData = ['msg1', 'msg2', 'msg3', 'msg4', 'msg5']
     messages = []
 
-    it '#addMessage() adds message to the top of user queue and returns its id',
+    it '#addMessage() adds message to the top of user queue and returns
+       message with filled in id field',
     (done) ->
       vasync.forEachPipeline
         func: (message, cb) -> queue.addMessage(username, {data: message}, cb)
@@ -32,7 +33,7 @@ describe 'Queue', () ->
         expect(err).to.be(null)
 
         messageData.forEach (data, idx) ->
-          id = results.operations[idx].result
+          id = results.operations[idx].result.id
           expect(id).to.be.a('number')
 
           messages.unshift

@@ -2,6 +2,7 @@ vasync = require 'vasync'
 expect = require 'expect.js'
 supertest = require 'supertest'
 fakeRedis = require 'fakeredis'
+fakeAuthdb = require '../fake-authdb'
 onlineApi = require '../../src/online-api'
 OnlineList = require '../../src/online-api/online-list'
 server = require '../../src/server'
@@ -15,17 +16,25 @@ endpoint = (path) ->
 
 describe 'Online API', () ->
   redis = fakeRedis.createClient(__filename)
+  authdb = fakeAuthdb.createClient()
   onlineList = new OnlineList(redis, {maxSize: 5})
 
   before (cb) ->
+
+    for username in common.TEST_LIST
+      authdb.addAccount "token-#{username}", username: username
+
     api = onlineApi.createApi
       onlineList: onlineList
+      authdbClient: authdb
 
     # This allows us to add user to an onlie list.
     server.get endpoint('/i-am-online/:username'),
     # First we fake AuthDB middleware (no auth logic)
     (req, res, next) ->
-      req.params.user = {username: req.params.username}
+      req.params.user =
+        username: req.params.username
+        email: "notimportant@gmail.com"
       next()
     ,
     # Then we use `api` provided middleware that registers user and
@@ -76,6 +85,16 @@ describe 'Online API', () ->
         .end (err, res) ->
           expect(err).to.be(null)
           expect(res.body).to.eql(common.reverseArray(common.TEST_LIST))
+          done()
+
+  describe 'POST /auth/:authToken/online', () ->
+    it 'allows to set user as online', (done) ->
+      go()
+        .post endpoint('/auth/token-alice/online')
+        .expect 200
+        .end (err, res) ->
+          expect(err).to.be(null)
+          expect(res.body).to.eql([ 'jdoe', 'bob', 'alice' ])
           done()
 
 # vim: ts=2:sw=2:et:

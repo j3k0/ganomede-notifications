@@ -21,9 +21,13 @@ describe 'OnlineList', () ->
   # Adding users 1 by 1 in order defined in TEST_LIST
   # (resulting online list is reversed).
   initList = (callback) ->
-    for username in TEST_LIST
-      list.add username
-    callback
+    timeout = 2
+    TEST_LIST.forEach (username) ->
+      setTimeout ->
+        list.add username
+      , timeout
+      timeout += 10
+    setTimeout callback, timeout
 
   getList = (callback) ->
     list.get(callback)
@@ -36,30 +40,29 @@ describe 'OnlineList', () ->
         (newer request first)',
     (done) ->
       initList (err, results) ->
-        expect(err).to.be(null)
+        expect(!err).to.be.ok()
 
         getRawList (err, list) ->
-          expect(err).to.be(null)
+          expect(!err).to.be.ok()
           expect(list).to.eql(reverseArray(TEST_LIST))
           done()
+          #console.log list, TEST_LIST
 
     it 'does not store duplicate usernames, but rather updates their score',
     (done) ->
       username = TEST_LIST[0]
 
-      list.add username, (err) ->
+      list.add username
+      getRawList (err, list) ->
         expect(err).to.be(null)
 
-        getRawList (err, list) ->
-          expect(err).to.be(null)
+        # We expect <username> to be moved to the top of the list.
+        expected = reverseArray(TEST_LIST)
+        expected.pop()              # remove from the end
+        expected.unshift(username)  # add to the top
 
-          # We expect <username> to be moved to the top of the list.
-          expected = reverseArray(TEST_LIST)
-          expected.pop()              # remove from the end
-          expected.unshift(username)  # add to the top
-
-          expect(list).to.eql(expected)
-          done()
+        expect(list).to.eql(expected)
+        done()
 
     it 'trims list at options.maxSize usernames, removing oldest requests',
     (done) ->
@@ -69,16 +72,13 @@ describe 'OnlineList', () ->
       expected = expected.slice(0, TEST_MAX_SIZE) # trim to max size
 
       initList (err) ->
-        expect(err).to.be(null)
+        expect(!err).to.be.ok()
 
         list.add username
-        delay 10, ->
-          # expect(err).to.be(null)
-
-          getList (err, list) ->
-            expect(err).to.be(null)
-            expect(list).to.eql(expected)
-            done()
+        getList (err, list) ->
+          expect(err).to.be(null)
+          expect(list).to.eql(expected)
+          done()
 
   describe '#get()', () ->
     before (cb) ->
@@ -93,3 +93,5 @@ describe 'OnlineList', () ->
           expect(err).to.be(null)
           expect(wrappedList).to.eql(rawList)
           done()
+
+# vim: ts=2:sw=2:et:

@@ -21,16 +21,20 @@ notificationsApi = (options={}) ->
     host: config.authdb.host
     port: config.authdb.port)
 
+  # Some notifications may require sending push notification.
+  # This function is called with `message` to be sent in it.
+  # It is meant to store message into redis queue that holds push notifications
+  # to be sent out.
+  addPushNotification = options.addPushNotification
+  if !addPushNotification
+    log.warn('No options.addPushNotification() function provided
+              to notificationsApi(). It will be noop()')
+    addPushNotification = ->
+
   # notificatinos redis pub/sub
   # notifications redis queue
   pubsub = options.pubsub
   queue = options.queue
-
-  # online-api middleware for updating online list
-  updateOnlineList = options.updateOnlineListMiddleware
-  if !updateOnlineList
-    log.warn 'options.updateOnlineListMiddleware missing, treating as noop'
-    updateOnlineList = (req, res, next) -> next()
 
   do () ->
     client = redis.createClient(config.redis.port, config.redis.host)
@@ -141,13 +145,18 @@ notificationsApi = (options={}) ->
     body.timestamp = Date.now()
 
     # add the message to the user's list
-    queue.addMessage body.to, body, (err, messageId) ->
+    queue.addMessage body.to, body, (err, message) ->
       if err
         return sendError(err, next)
 
+      # If message has push object, it is also meant to be sent as
+      # push notification.
+      if message.hasOwnProperty('push')
+        addPushNotification(message)
+
       reply =
-        id: messageId
-        timestamp: body.timestamp
+        id: message.id
+        timestamp: message.timestamp
 
       # notify user that he has a message and respond to request
       pubsub.publish(body.to)
@@ -156,7 +165,7 @@ notificationsApi = (options={}) ->
 
   return (prefix, server) ->
     server.get "/#{prefix}/auth/:authToken/messages",
-      authMiddleware, updateOnlineList, getMessages, longPollMiddleware
+      authMiddleware, getMessages, longPollMiddleware
     server.post "/#{prefix}/messages", apiSecretMiddleware, postMessage
 
 module.exports = notificationsApi

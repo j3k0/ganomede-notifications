@@ -27,8 +27,8 @@ class Queue
       .ltrim username, 0, @maxRedisIndex
       .exec(callback)
 
-  #
-  # callback(err, messageId)
+  # Figures out message ID and adds message to user's queue
+  # callback(err, message)
   addMessage: (username, message, callback) ->
     vasync.waterfall [
       @nextId.bind(@)
@@ -41,7 +41,7 @@ class Queue
               replies: replies
             return cb(err)
 
-          cb(null, id)
+          cb(null, message)
     ], callback
 
   # callback(err, messages)

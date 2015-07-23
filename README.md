@@ -17,8 +17,21 @@ Notificatinos from different services will be of different `type` and will conta
 
   "type": "invitation",            // String  Notification type (depends on the service)
   "data": {}                       // Object  Notification data (depends on the service and type)
+  "push": {}                       // Object  Optional, include if you want this notification to be also sent as push-notification to user devices.
 }
 ```
+
+Notifications containing `.push` object will also be sent as push notifications to user devices. Payload of that push notification will contain original ganomede notification. Fields in `.push` describe how notification will be displayed to user.
+
+``` js
+{ "app": "triominos/v1"  // String, required  Which app to notify
+
+  "title": [ "localization-key", "args..." ],   // String[], optional
+  "message": [ "localization-key", "args..." ]  // String[], optional
+}
+```
+
+`.push.title` and `.push.message` must be String arrays of at least 1 length containing localization key at `[0]` followed by any number of localization arguments. If either title, or message, or both are not present, notificaiton alert will default to `config.pushApi.apn.defaultAlert` string.
 
 Relations
 ---------
@@ -37,14 +50,23 @@ Variables available for service configuration (see [config.js](/config.js)):
  * `ROUTE_PREFIX`
  * `REDIS_AUTH_PORT_6379_TCP_ADDR` — IP of the AuthDB redis
  * `REDIS_AUTH_PORT_6379_TCP_PORT` — Port of the AuthDB redis
- * `REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR` — Redis notifications host
- * `REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT` — Redis notifications port
- * `MESSAGE_QUEUE_SIZE` — Redis notifications queue size
- * `API_SECRET` — Secret passcode required to send notifications
- * `ONLINE_LIST_SIZE` — Redis list size with users most recently online
- * `ONLINE_LIST_INVISIBLE_MATCH` - Regex matching invisible players
- * `REDIS_ONLINELIST_PORT_6379_TCP_ADDR` — Redis online list host
- * `REDIS_ONLINELIST_PORT_6379_TCP_PORT` — Redis online list port
+ * `NODE_ENV` — Antything except `production` means that app is running in development (debug) mode
+ * Notifications API
+   - `REDIS_NOTIFICATIONS_PORT_6379_TCP_ADDR` — Redis notifications host
+   - `REDIS_NOTIFICATIONS_PORT_6379_TCP_PORT` — Redis notifications port
+   - `MESSAGE_QUEUE_SIZE` — Redis notifications queue size
+   - `API_SECRET` — Secret passcode required to send notifications
+ * Online List API
+   - `ONLINE_LIST_SIZE` — Redis list size with users most recently online
+   - `ONLINE_LIST_INVISIBLE_MATCH` - Regex matching invisible players
+   - `REDIS_ONLINELIST_PORT_6379_TCP_ADDR` — Redis online list host
+   - `REDIS_ONLINELIST_PORT_6379_TCP_PORT` — Redis online list port
+ * Push Notifications API
+   - `REDIS_PUSHAPI_PORT_6379_TCP_ADDR` — Redis host for storing push tokens
+   - `REDIS_PUSHAPI_PORT_6379_TCP_PORT` — Redis port for storing push tokens
+   - `APN_CERT_FILEPATH` — Path to .pem file with APN certificate
+   - `APN_KEY_FILEPATH` — Path to .pem file with APN private key
+   - `NODE_ENV` - set to production to connect to the production gateway. Otherwise it will connect to the sandbox.
 
 AuthDB
 ------
@@ -123,7 +145,7 @@ Every time client sends request for retrieving messages for a particular user, t
 
 List is trimmed at `ONLINE_LIST_SIZE` most recent users.
 
-## Retrive List [GET]
+## Retrieve List [GET]
 
 Will return a list of usernames of most recently online users. This list is publicly available (no `API_SECRET` or auth required).
 
@@ -135,3 +157,43 @@ Will return a list of usernames of most recently online users. This list is publ
       "bob"
     ]
 
+# Online status [/auth/:authToken/online]
+
+User is online.
+
+## Set as online [POST]
+
+Add user to the list of online players, returns the list.
+
+### response [200] OK
+
+    [
+      "username",
+      "alice",
+      ...
+      "bob"
+    ]
+
+# Push Notifications API
+
+## Save Push Token [POST /auth/:authToken/push-token]
+
+Saves user's push notifications token to database. Example Body:
+
+``` js
+{
+    app: 'substract-game',         // String, which app this token is for
+    type: 'apn',                   // String, which push notifications provider
+                                   //         this token is for, `apn` or `gcm`
+                                   //         (see Token.TYPES)
+    value: 'alicesubstracttoken'   // token value
+}
+```
+
+# Push Notifications Worker
+
+The server doesn't send push notifications, only add them to a task list. A worker will read from this task list and do the actual sending.
+
+Worker is found in src/push-api/sender-cli.coffee
+
+A way of running it continously is through the push-worker.sh script, that'll spawn one worker every second.

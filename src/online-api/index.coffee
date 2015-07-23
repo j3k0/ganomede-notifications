@@ -1,10 +1,21 @@
 redis = require 'redis'
+authdb = require "authdb"
 OnlineList = require './online-list'
 config = require '../../config'
-log = require '../log'
+log = require('../log').child(module: "online-api")
+restify = require "restify"
+
+sendError = (err, next) ->
+  log.error err
+  next err
 
 createApi = (options={}) ->
   onlineList = options.onlineList
+
+  # configure authdb client
+  authdbClient = options.authdbClient || authdb.createClient(
+    host: config.authdb.host
+    port: config.authdb.port)
 
   if !onlineList
     client = redis.createClient(
@@ -15,17 +26,34 @@ createApi = (options={}) ->
 
     onlineList = new OnlineList(client, {maxSize: config.onlineList.maxSize})
 
-  # Return list of usernames most recently online
-  onlineListEndpoint = (req, res, next) ->
-    onlineList.get (err, list) ->
-      if (err)
-        log.error('onlineListEndpoint() failed', {err: err})
-        restErr = new restify.InternalServerError()
-        log.error(restErr)
-        return next(restErr)
+  #
+  # Middlewares
+  #
 
-      res.json(list)
+  # Populates req.params.user with value returned from authDb.getAccount()
+  authMiddleware = (req, res, next) ->
+    authToken = req.params.authToken
+    if !authToken
+      return sendError(new restify.InvalidContentError('invalid content'), next)
+
+    authdbClient.getAccount authToken, (err, account) ->
+      if err || !account
+        return sendError(new restify.UnauthorizedError('not authorized'), next)
+
+      req.params.user = account
       next()
+
+  # Update the list of online players
+  updateOnlineListMiddleware = (req, res, next) ->
+    username = req.params?.user?.username
+    email = req.params?.user?.email
+    if username and email and !isInvisible email
+      onlineList.add username
+    next()
+
+  #
+  # Utils
+  #
 
   # Some players should stay invisible
   invisibleMatch = options.invisibleMatch ||
@@ -38,18 +66,35 @@ createApi = (options={}) ->
     else
       isInvisible = -> false
 
+  #
+  # Endpoints
+  #
+
+  # Return list of usernames most recently online
+  getOnlineList = (req, res, next) ->
+    onlineList.get (err, list) ->
+      if (err)
+        log.error('onlineListEndpoint() failed', {err: err})
+        restErr = new restify.InternalServerError()
+        log.error(restErr)
+        return next(restErr)
+
+      res.json(list)
+      next()
+
   api = {}
   
   api.addRoutes = (prefix, server) ->
-    server.get("/#{prefix}/online", onlineListEndpoint)
 
-  # Update the list of online players
-  api.updateOnlineListMiddleware = (req, res, next) ->
-    username = req.params?.user?.username
-    email = req.params?.user?.email
-    if username and email and !isInvisible email
-      onlineList.add username
-    next()
+    # Get random list on online users
+    server.get("/#{prefix}/online", getOnlineList)
+ 
+    # Sets the player as online, return list of online users
+    server.post("/#{prefix}/auth/:authToken/online",
+      authMiddleware, updateOnlineListMiddleware, getOnlineList)
+
+  # Export the updateOnlineList middleware
+  api.updateOnlineListMiddleware = updateOnlineListMiddleware
 
   return api
 
