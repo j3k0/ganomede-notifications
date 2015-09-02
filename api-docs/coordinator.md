@@ -11,7 +11,7 @@ Coordinator sends out 2 types of notifications that are bascially the same: `lea
 
 Notification `data` will include:
 
-``` json
+``` js
 {
   "data": {
     // basic game info
