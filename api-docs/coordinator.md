@@ -5,7 +5,7 @@ See [#20](https://github.com/j3k0/ganomede-notifications/issues/20) for discussi
 
 Every notification type has `from` field set to `coordinator/v1`.
 
-Coordinator sends out 2 types of notifications that are bascially the same: `leave` and `join` for notifying players that someone leaved or joined a game they are participating in. Every active player participating will receive this notifications except the one that left or joined.
+Coordinator sends out 2 types of notifications that are bascially the same: `leave` and `join` for notifying players that someone left or joined a game they are participating in. Every active player will receive these notifications except the one that left or joined.
 
 (Active players are those who joined the game and didn't left it.)
 
