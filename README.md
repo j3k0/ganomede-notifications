@@ -7,6 +7,7 @@ Notificatinos are created by other ganomede services by [posting notification](#
 
   * [Invitations module](/api-docs/invitations.md)
   * [Turngame module](/api-docs/turngame.md)
+  * [Coordinator module](/api-docs/turngame.md)
 
 Notificatinos from different services will be of different `type` and will contain different `data`, but following fields will always be present in every notification:
 
