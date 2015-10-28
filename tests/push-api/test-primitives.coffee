@@ -29,8 +29,19 @@ describe 'Token', () ->
     expect(token.type).to.be(Token.APN)
     expect(token.type in Token.TYPES).to.be(true)
 
-  it '#data() returns token value without type', () ->
-    expect(token.data()).to.be(data.value)
+  describe '#data()', () ->
+    it 'returns token value without type', () ->
+      expect(token.data()).to.be(data.value)
+
+    it 'correctly processes token values with colons', () ->
+      payload = {
+        username: 'alice'
+        app: 'some/app'
+        type: 'gcm'
+        value: 'value:with:colons'
+      }
+
+      expect(Token.fromPayload(payload).data()).to.be(payload.value)
 
 describe 'TokenStorage', () ->
   redis = fakeRedis.createClient(__filename)
