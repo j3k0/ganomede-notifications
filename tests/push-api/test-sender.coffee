@@ -47,3 +47,21 @@ describe 'Sender', () ->
         apnSender.connection.once 'completed', done
     else
       it 'sends notifications (please specify TEST_APN_TOKEN env var)'
+
+  describe 'Sender.GcmSender', () ->
+    hasTestInfo = process.env.hasOwnProperty('TEST_GCM_API_KEY') &&
+      process.env.hasOwnProperty('TEST_GCM_TOKEN')
+    unless hasTestInfo
+      return it "sends notifications (please specify env vars:
+        TEST_GCM_API_KEY and TEST_GCM_TOKEN)"
+
+    it 'sends notifications', (done) ->
+      gcmSender = new Sender.GcmSender(process.env.TEST_GCM_API_KEY)
+      token = Token.fromPayload(
+        samples.tokenData('gcm', process.env.TEST_GCM_TOKEN)
+      )
+      task = new Task(samples.notification(), [token, token])
+
+      gcmSender.send task.convert(token.type), task.tokens, (err, result) ->
+        expect(err).to.be(null)
+        done()

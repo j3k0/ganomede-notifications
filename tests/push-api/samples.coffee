@@ -1,12 +1,12 @@
 sinon = require 'sinon'
 Token = require '../../src/push-api/token'
 
-exports.tokenData = () ->
+exports.tokenData = (type='apn', value='alicesubstracttoken') ->
   return {
     username: 'alice'
     app: 'substract-game/v1'
-    type: 'apn'
-    value: 'alicesubstracttoken'
+    type: type
+    value: value
   }
 
 exports.notification = (push={}, reciever='alice') ->

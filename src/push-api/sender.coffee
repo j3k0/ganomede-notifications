@@ -1,4 +1,5 @@
 apn = require 'apn'
+gcm = require 'node-gcm'
 vasync = require 'vasync'
 config = require '../../config'
 log = (require '../log').child(sender:true)
@@ -25,6 +26,24 @@ class ApnSender
   close: () ->
     @connection.shutdown()
 
+class GcmSender
+  constructor: (apiKey) ->
+    @gcm = new gcm.Sender(apiKey)
+    @log = log.child({gcm: true})
+
+  send: (gcmMessage, tokens, callback=->) ->
+    registrationIds = tokens.map (token) -> token.data()
+    @gcm.sendNoRetry gcmMessage, registrationIds, (err, result) ->
+      if (err)
+        log.error 'GcmSender.send() failed',
+          err: err
+          message: gcmMessage
+          tokens: registrationIds
+          result: result
+        return callback(err)
+
+      callback(null, result)
+
 class Sender
   constructor: (@senders={}) ->
 
@@ -49,5 +68,6 @@ class Sender
     # Exec those functions
     vasync.parallel({funcs: sendFunctions}, callback)
 
+Sender.GcmSender = GcmSender
 Sender.ApnSender = ApnSender
 module.exports = Sender

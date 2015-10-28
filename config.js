@@ -60,6 +60,15 @@ module.exports = {
       expiry: 3600,
       badge: 1,
       sound: 'ping.aiff'
+    },
+
+    // GCM related
+    gcm: {
+      icon: 'ic_stat_ic_notification', // Fill in resource ID
+      defaultNotification: {
+        title: 'You have a new message',
+        icon: 'ic_stat_ic_notification'  // Fill in resoures ID
+      }
     }
   }
 };

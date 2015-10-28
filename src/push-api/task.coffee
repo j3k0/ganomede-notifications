@@ -1,4 +1,5 @@
 apn = require 'apn'
+gcm = require 'node-gcm'
 Token = require './token'
 config = require '../../config'
 log = require '../log'
@@ -56,5 +57,24 @@ Task.converters[Token.APN].alert = (push) ->
     # Not sure what notification.alert should be while converting to APN.
     log.warn 'Not sure what apnNotification.alert should be given push', push
     return config.pushApi.apn.defaultAlert
+
+Task.converters[Token.GCM] = (notification) ->
+  return new gcm.Message({
+    data: {json: JSON.stringify(notification)}
+    notification: Task.converters[Token.GCM].notification(notification.push)
+  })
+
+Task.converters[Token.GCM].notification = (push) ->
+  unless Array.isArray(push.title) && Array.isArray(push.message)
+    log.warn 'Not sure what gcmNote.notification should be for push', push
+    return config.pushApi.gcm.defaultNotification
+
+  return {
+    icon: config.pushApi.gcm.icon
+    title_loc_key: push.title[0]
+    title_loc_args: push.title.slice(1)
+    body_loc_key: push.message[0]
+    body_loc_args: push.message.slice(1)
+  }
 
 module.exports = Task
