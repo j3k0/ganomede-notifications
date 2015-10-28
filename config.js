@@ -64,6 +64,7 @@ module.exports = {
 
     // GCM related
     gcm: {
+      apiKey: process.env.GCM_API_KEY,
       icon: 'ic_stat_ic_notification', // Fill in resource ID
       defaultNotification: {
         title: 'You have a new message',
