@@ -60,7 +60,9 @@ Task.converters[Token.APN].alert = (push) ->
 
 Task.converters[Token.GCM] = (notification) ->
   return new gcm.Message({
-    data: {json: JSON.stringify(notification)}
+    data:
+      json: JSON.stringify(notification)
+      notificationId: notification.id # for easier debug prints
     notification: Task.converters[Token.GCM].notification(notification.push)
   })
 
