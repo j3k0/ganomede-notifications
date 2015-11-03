@@ -17,9 +17,14 @@ describe 'Sender.ApnSender', () ->
 
   if process.env.hasOwnProperty('TEST_APN_TOKEN')
     it 'sends notifications', (done) ->
+      this.timeout(5000)
       apnSender.send task.convert(token.type), task.tokens
-      apnSender.connection.once 'transmissionError', done
-      apnSender.connection.once 'completed', done
+      apnSender.connection.once 'transmissionError', (code, note, device) ->
+        done(new Error("APN Error code=#{code}"))
+
+      apnSender.connection.once 'completed', () ->
+        # Give a chance for error to get back to us
+        setTimeout(done, 4500)
   else
     it 'sends notifications (please specify TEST_APN_TOKEN env var)'
 
