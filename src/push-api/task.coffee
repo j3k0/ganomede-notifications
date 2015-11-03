@@ -1,5 +1,6 @@
 apn = require 'apn'
 gcm = require 'node-gcm'
+lodash = require 'lodash'
 Token = require './token'
 config = require '../../config'
 log = require '../log'
@@ -69,9 +70,10 @@ Task.converters[Token.GCM] = (notification) ->
 Task.converters[Token.GCM].notification = (push) ->
   unless Array.isArray(push.title) && Array.isArray(push.message)
     log.warn 'Not sure what gcmNote.notification should be for push', push
-    return config.pushApi.gcm.defaultNotification
+    return lodash.extend {tag: push.app}, config.pushApi.gcm.defaultNotification
 
   return {
+    tag: push.app
     icon: config.pushApi.gcm.icon
     title_loc_key: push.title[0]
     title_loc_args: push.title.slice(1)
