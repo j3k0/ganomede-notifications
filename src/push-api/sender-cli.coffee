@@ -21,7 +21,7 @@ debug = if !config.debug then () -> else () ->
 
 class Producer extends stream.Readable
   constructor: (@queue) ->
-    super({objectMode: true, highWaterMark: config.pushApi.cliReadAhead})
+    super({objectMode: true, highWaterMark: config.pushApi.cli.readAhead})
 
   _getTask: (callback) ->
     @queue.get (err, task) =>
@@ -50,18 +50,20 @@ class Producer extends stream.Readable
 
 class Consumer extends stream.Writable
   constructor: (@sender) ->
-    super({objectMode: true, highWaterMark: config.pushApi.cliReadAhead})
+    super({objectMode: true, highWaterMark: config.pushApi.cli.parallelSends})
 
     @state =
       queued: 0
       finished: 0
+      maxDiff: config.pushApi.cli.parallelSends
       processedCallbacks: []
 
     @sender.on Sender.events.PROCESSED, (senderType, notifId, token) =>
       @state.finished += 1
       debug("#{senderType} processed #{notifId} for #{token}", @state)
 
-      if @state.finished >= @state.queued
+      canQueueMore = @state.queued - @state.finished <= @state.maxDiff
+      if canQueueMore
         debug('can queue more', @state)
         fn = @state.processedCallbacks.pop()
         if fn

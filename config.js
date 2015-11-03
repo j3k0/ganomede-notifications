@@ -42,10 +42,18 @@ module.exports = {
     tokensPrefix: [unversionedApi, 'push-tokens'].join(':'),
     notificationsPrefix: [unversionedApi, 'push-notifications'].join(':'),
 
-    // When sending push notifications, sender cli will enqueue up to this
-    // number of Redis waiting notifications (RPOP it from redis and add
-    // to send queue).
-    cliReadAhead: 16,
+    // When sending push notifications, sender cli will:
+    //  read up to readAhead tasks from redis
+    //    (this means it will remove them from redis for
+    //     processing in this instance)
+    //
+    //  each task can have multiple tokens which are individual
+    //  push notifications transported in parallel. Only about
+    //  parallelSends can be running at any given moment.
+    cli: {
+      readAhead: 10,
+      parallelSends: 10
+    },
 
     // Apple related
     apn: {
