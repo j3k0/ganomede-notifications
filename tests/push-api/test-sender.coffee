@@ -40,7 +40,10 @@ describe 'Sender.GcmSender', () ->
     token = Token.fromPayload(
       samples.tokenData('gcm', process.env.TEST_GCM_TOKEN)
     )
-    task = new Task(samples.notification(), [token, token])
+    notif = samples.notification
+      title: [ "your_turn_title", "DollyWood" ]
+      message: [ "your_turn_message", "DollyWood" ]
+    task = new Task(notif, [token])
 
     gcmSender.once Sender.events.SUCCESS, (noteId, gcmToken) ->
       expect(noteId).to.be(samples.notification().id)

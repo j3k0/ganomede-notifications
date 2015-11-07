@@ -60,25 +60,42 @@ Task.converters[Token.APN].alert = (push) ->
     return config.pushApi.apn.defaultAlert
 
 Task.converters[Token.GCM] = (notification) ->
+  push = notification.push || {}
   return new gcm.Message({
     data:
-      json: JSON.stringify(notification)
       notificationId: notification.id # for easier debug prints
+      json: JSON.stringify(notification)
+      title_loc_key: androidKeyFormat(headString push.title)
+      title_loc_args: headString push.title.slice(1)
+      body_loc_key: androidKeyFormat(headString push.message)
+      body_loc_args: headString push.message.slice(1)
     notification: Task.converters[Token.GCM].notification(notification.push)
   })
 
 Task.converters[Token.GCM].notification = (push) ->
   unless Array.isArray(push.title) && Array.isArray(push.message)
-    log.warn 'Not sure what gcmNote.notification should be for push', push
-    return lodash.extend {tag: push.app}, config.pushApi.gcm.defaultNotification
+    log.warn 'Not sure what gcmNote.notification should b', push:push
+    return {
+      tag: push.app
+      icon: config.pushApi.gcm.icon
+      title: config.pushApi.gcm.defaultTitle
+    }
 
   return {
     tag: push.app
     icon: config.pushApi.gcm.icon
-    title_loc_key: push.title[0]
+    title: push.title[0]
+    message: push.title[0]
+    title_loc_key: androidKeyFormat(push.title[0])
     title_loc_args: push.title.slice(1)
-    body_loc_key: push.message[0]
+    body_loc_key: androidKeyFormat(push.message[0])
     body_loc_args: push.message.slice(1)
+    priority: 'high'
+    contentAvailable: true
   }
+
+headString = (a) -> if (a?.length) then a[0] else ''
+
+androidKeyFormat = (s) -> s.replace(/\{1\}/g, "%1").replace(/\{2\}/g, "%2")
 
 module.exports = Task
