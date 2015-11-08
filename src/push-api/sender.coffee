@@ -1,5 +1,8 @@
 apn = require 'apn'
+gcm = require 'node-gcm'
+events = require 'events'
 vasync = require 'vasync'
+Token = require './token'
 config = require '../../config'
 log = (require '../log').child(sender:true)
 
@@ -12,24 +15,60 @@ class ApnSender
     @connection = new apn.Connection(options)
     @log = log.child apn:true
 
-  # TODO
-  # errors?
-  send: (notification, tokens, callback=->) ->
-    @log.info "send",
-      tokens:tokens
-      notification:notification
+  send: (notification, tokens) ->
+    @log.info "sending APN #{notification.payload.id}"
     devices = tokens.map (token) -> new apn.Device(token.data())
     @connection.pushNotification(notification, devices)
-    setImmediate(callback)
 
-  close: () ->
+  close: (cb) ->
+    @connection.once('disconnected', cb)
     @connection.shutdown()
 
-class Sender
+class GcmSender extends events.EventEmitter
+  constructor: (apiKey) ->
+    super()
+    @gcm = new gcm.Sender(apiKey)
+    @log = log.child({gcm: true})
+
+  _send: (message, ids) ->
+    @gcm.sendNoRetry message, ids, (err, result) =>
+      # Unlike APN sender, we need to manually emit N times for each token.
+      notifId = message.params.data.notificationId
+      for token in ids
+        if err
+          @emit(Sender.events.FAILURE, {httpCode: err}, notifId, token)
+        else
+          @emit(Sender.events.SUCCESS, notifId, token)
+
+  send: (gcmMessage, tokens) ->
+    @log.info "sending GCM #{gcmMessage.params.data.notificationId}"
+    registrationIds = tokens.map (token) -> token.data()
+    @_send(gcmMessage, registrationIds)
+
+class Sender extends events.EventEmitter
   constructor: (@senders={}) ->
+    super()
+
+    # APN events
+    # (no way to know about success)
+    @senders[Token.APN].connection.on 'transmitted', (notification, device) =>
+      @emit(Sender.events.PROCESSED, Token.APN, notification.payload.id, device)
+
+    @senders[Token.APN].connection.on 'transmissionError', (code, n, device) =>
+      @emit(Sender.events.FAILURE, Token.APN, {code}, n.payload.id, device)
+
+    # GCM Events
+    # (since it is POST, we can reliably know if notification was accpeted)
+    @senders[Token.GCM].on Sender.events.SUCCESS, (notifId, token) =>
+      @emit(Sender.events.PROCESSED, Token.GCM, notifId, token)
+      @emit(Sender.events.SUCCESS, Token.GCM, notifId, token)
+
+    @senders[Token.GCM].on Sender.events.FAILURE, (error, notifId, token) =>
+      @emit(Sender.events.PROCESSED, Token.GCM, notifId, token)
+      @emit(Sender.events.FAILURE, Token.GCM, error, notifId, token)
 
   # Sends push notification from task.notification for each one of task.tokens.
-  send: (task, callback=->) ->
+  send: (task) ->
     # Group tokens by type
     groupedTokens = {}
     task.tokens.forEach (token) ->
@@ -47,7 +86,20 @@ class Sender
       sendFunctions.push(fn)
 
     # Exec those functions
-    vasync.parallel({funcs: sendFunctions}, callback)
+    sendFunctions.forEach (fn) -> fn()
 
+  @events: {
+    # notification processed somehow
+    # cb(senderType, notificationId, token)
+    PROCESSED: 'processed'
+    # notification succeeded
+    # cb(senderType, notificationId, token)
+    SUCCESS: 'sent'
+    # notification failed
+    # cb(senderType, error, notificationId, token)
+    FAILURE: 'failed'
+  }
+
+Sender.GcmSender = GcmSender
 Sender.ApnSender = ApnSender
 module.exports = Sender

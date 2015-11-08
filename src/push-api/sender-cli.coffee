@@ -6,6 +6,7 @@ if process.env.NEW_RELIC_LICENSE_KEY
     process.env.NEW_RELIC_APP_NAME = "push-worker/v1"
   require 'newrelic'
 
+vasync = require 'vasync'
 stream = require 'stream'
 redis = require 'redis'
 config = require '../../config'
@@ -16,89 +17,69 @@ Queue = require './queue'
 log = (require '../log').child(SenderCli:true)
 
 debug = if !config.debug then () -> else () ->
-  # console.log.apply(console, arguments)
   log.debug.apply(log, arguments)
 
 class Producer extends stream.Readable
   constructor: (@queue) ->
-    super({objectMode: true, highWaterMark: config.pushApi.cliReadAhead})
+    super({objectMode: true, highWaterMark: config.pushApi.cli.readAhead})
 
-  _read: (size) ->
+  _getTask: (callback) ->
     @queue.get (err, task) =>
       if (err)
-        log.error 'Failed to retrieve task', err
-        @emit('error', err)
-        return @push(null)
+        log.error('Failed to retrieve task', err)
+        return callback(err, null)
 
-      # If no tokens, skip notification, and call _read() manually
-      # (required since push() must be called for every _read.)
+      # If no tokens, skip notification, and _getTask() again for a new item.
       if (task && task.tokens.length == 0)
-        log.warn 'Found no tokens for sending notification, skipping',
-          task.notification
-        return process.nextTick(@_read.bind(@))
+        log.warn('No tokens for notification, skipping', task.notification)
+        return process.nextTick(@_getTask.bind(@, callback))
 
       if task
-        debug 'read', id:task.notification.id
-      # else
-      #  log.info 'Queue is empty'
+        debug('read', id:task.notification.id)
+      else
+        debug('queue is empty')
+
+      callback(null, task || null)
+
+  _read: (size) ->
+    @_getTask (err, task) =>
+      if (err)
+        @emit('erorr', err)
 
       @push(task)
 
 class Consumer extends stream.Writable
   constructor: (@sender) ->
-    super({objectMode: true})
+    super({objectMode: true, highWaterMark: config.pushApi.cli.parallelSends})
 
     @state =
-      nMax: config.pushApi.cliReadAhead
-      nWaiting: 0
-      readyFunctions: []
-      finishCallback: null
+      queued: 0
+      finished: 0
+      maxDiff: config.pushApi.cli.parallelSends
+      processedCallbacks: []
 
-    connection = @sender.senders[Token.APN].connection
-    connection.on 'transmitted', @onTransmitted.bind(@)
-    connection.on 'transmissionError', (code, notification, device) =>
-      @emit('error', code, notification, device.toString())
+    @sender.on Sender.events.PROCESSED, (senderType, notifId, token) =>
+      @state.finished += 1
+      debug("#{senderType} processed #{notifId} for #{token}", @state)
 
-  # The idea is that we ready for more, when `transmitted` event occurs
-  # N times (where N is number of tokens for each task).
-  # That way Producer won't buffer too many of notifications and "too many"
-  # is adjustable by config.pushApi.cliReadAhead.
-  taskAdded: (nTokens, readyFn) ->
-    @state.nWaiting += nTokens
-    debug 'taskAdded', state:@state
+      canQueueMore = @state.queued - @state.finished <= @state.maxDiff
+      if canQueueMore
+        debug('can queue more', @state)
+        fn = @state.processedCallbacks.pop()
+        if fn
+          fn()
 
-    if @canAddMoreTasks()
-      readyFn()
-    else
-      @state.readyFunctions.push(readyFn)
+    # @sender.on Sender.events.SUCCESS, (senderType, info) ->
+    #   debug("#{senderType} succeeded", info)
 
-  canAddMoreTasks: () ->
-    return @state.nWaiting < @state.nMax
+    @sender.on Sender.events.FAILURE, (senderType, err, notifId, token) ->
+      log.error("#{senderType} failed to send #{notifId} for #{token}", err)
 
-  onTransmitted: (notification, device) ->
-    debug 'transmitted', notification.payload.id
-
-    @state.nWaiting -= 1
-    if @canAddMoreTasks()
-      readyFn = @state.readyFunctions.shift()
-      if readyFn
-        readyFn()
-
-    # When no more tasks will be added, finishCallback will be set,
-    # call it when everything in the queue is transmitted.
-    if @state.finishCallback && (@state.nWaiting == 0)
-      @state.finishCallback()
-
-  _write: (task, encoding, readyForMore) ->
-    debug 'written', id:task.notification.id
+  _write: (task, encoding, processed) ->
+    @state.queued += task.tokens.length
+    @state.processedCallbacks.push(processed)
+    debug('written', id:task.notification.id, @state)
     @sender.send task
-    @taskAdded(task.tokens.length, readyForMore)
-
-  # Call when no more tasks will be added
-  finishUp: (callback) ->
-    @state.finishCallback = callback
-    if @state.nWaiting == 0
-      callback()
 
 main = (testing) ->
   client = redis.createClient(
@@ -109,51 +90,55 @@ main = (testing) ->
   queue = new Queue(client, storage)
 
   senders = {}
+
   senders[Token.APN] = apnSender = new Sender.ApnSender(
     cert: config.pushApi.apn.cert
     key: config.pushApi.apn.key
     buffersNotifications: false
     maxConnections: config.pushApi.apn.maxConnections
   )
-  sender = new Sender(senders)
 
+  senders[Token.GCM] = gcmSender = new Sender.GcmSender(
+    config.pushApi.gcm.apiKey
+  )
+
+  sender = new Sender(senders)
   producer = new Producer(queue)
   consumer = new Consumer(sender)
+
+  # Keep track of closed sockets.
+  quitters =
+    redis: false
+    apn: false
 
   # redis queue is empty
   producer.on 'end', () ->
     client.quit()
+    client.once 'end', () ->
+      quitters.redis = true
 
   # all the tasks are enqueued to be sent or sent
   consumer.on 'finish', () ->
-    debug 'finishing up with', consumer.state
-    apnSender.close()
+    # Redis usually shuts down nicely, but APN might need some time,
+    # give it that, and force exit if it won't play nicely.
+    forceExitTimeout = setTimeout () ->
+      debug('forced exit', quitters)
+      process.exit(0)
+    , 2000
 
-    # wait for remaining tasks to be sent, and exit
-    consumer.finishUp () ->
-      debug 'finished up with', consumer.state
+    tryToExit = () ->
+      debug('trying to exit', quitters)
+      if (quitters.redis && quitters.apn)
+        return clearTimeout(forceExitTimeout)
 
-      # Sometimes `apn` does close connection, sometimes it doesn't.
-      # Give it a moment before we force it.
-      exit = () ->
-        debug('forced exit')
-        process.exit(0)
-
-      setTimeout(exit, 500)
-
-  # something wrong with RPOPing from redis
-  producer.on 'error', (err) ->
-    log.error 'producer error', err
-
-  # apn transmission failed
-  consumer.on 'error', (code, notification, token) ->
-    log.error "consumer error: code `%s` for token `%s`", code, token,
-      notification
+    apnSender.close () ->
+      quitters.apn = true
+      tryToExit()
 
   # Start callbacking
   start = (err) ->
     if (err)
-      log.info('START CALLED WITH ERROR\n', err)
+      log.error('start() called with error', err)
       return process.exit(1)
 
     producer.pipe(consumer)
@@ -177,6 +162,13 @@ main = (testing) ->
       value: process.env.TEST_APN_TOKEN
     )
 
+    tokenGcm = Token.fromPayload(
+      username: 'alice'
+      app: 'app'
+      type: 'gcm'
+      value: process.env.TEST_GCM_TOKEN
+    )
+
     args = [config.pushApi.notificationsPrefix].concat(objects)
     multi = client.multi()
     multi.flushdb()
@@ -185,12 +177,14 @@ main = (testing) ->
       if (err)
         return callback(err)
 
-      storage.add token, (err, added) ->
+      tokensToAdd = [token, tokenGcm].map (t) -> storage.add.bind(storage, t)
+
+      vasync.parallel {funcs: tokensToAdd}, (err, results) ->
         if (err)
           return callback(err)
 
-        if (!added)
-          return callback(new Error('No token added'))
+        if (!results.successes.every (ret) -> ret == true)
+          return callback(new Error('Not every token was added'))
 
         callback()
 

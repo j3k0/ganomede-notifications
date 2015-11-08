@@ -5,7 +5,7 @@ class Token
     @type = @value.slice(0, @value.indexOf(':'))
 
   data: () ->
-    return @value.split(':')[1]
+    return @value.split(':').slice(1).join(':')
 
   @key: (username, app) ->
     return [config.pushApi.tokensPrefix, username, app].join(':')

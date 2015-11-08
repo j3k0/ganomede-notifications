@@ -1,12 +1,9 @@
-sinon = require 'sinon'
-Token = require '../../src/push-api/token'
-
-exports.tokenData = () ->
+exports.tokenData = (type='apn', value='alicesubstracttoken') ->
   return {
     username: 'alice'
     app: 'substract-game/v1'
-    type: 'apn'
-    value: 'alicesubstracttoken'
+    type: type
+    value: value
   }
 
 exports.notification = (push={}, reciever='alice') ->
@@ -20,12 +17,4 @@ exports.notification = (push={}, reciever='alice') ->
     id: 1
 
   ret.push.app = ret.push.app || ret.from
-  return ret
-
-exports.fakeSenders = () ->
-  ret = {}
-  for type in Token.TYPES
-    fakeSend = (payload, tokens, callback) -> process.nextTick(callback)
-    ret[type] = {send: sinon.spy(fakeSend)}
-
   return ret

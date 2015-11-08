@@ -41,10 +41,10 @@ docker-run: docker-prepare
 	docker-compose run --rm --service-ports app make run BUNYAN_LEVEL=${BUNYAN_LEVEL}
 
 docker-run-worker: docker-prepare
-	docker-compose run --rm --service-ports app make run-worker "BUNYAN_LEVEL=${BUNYAN_LEVEL}" "TEST_APN_TOKEN=${TEST_APN_TOKEN}"
+	docker-compose run --rm --service-ports app make run-worker "BUNYAN_LEVEL=${BUNYAN_LEVEL}" "TEST_APN_TOKEN=${TEST_APN_TOKEN}" "APN_KEY_FILEPATH=${APN_KEY_FILEPATH}" "APN_CERT_FILEPATH=${APN_CERT_FILEPATH}"
 
 docker-run-worker-loop: docker-prepare
-	docker-compose run --rm --service-ports app make run-worker-loop "BUNYAN_LEVEL=${BUNYAN_LEVEL}" "TEST_APN_TOKEN=${TEST_APN_TOKEN}"
+	docker-compose run --rm --service-ports app make run-worker-loop "BUNYAN_LEVEL=${BUNYAN_LEVEL}" "TEST_APN_TOKEN=${TEST_APN_TOKEN}" "APN_KEY_FILEPATH=${APN_KEY_FILEPATH}" "APN_CERT_FILEPATH=${APN_CERT_FILEPATH}"
 
 docker-test: docker-prepare
 	docker-compose run --rm app make test BUNYAN_LEVEL=${BUNYAN_LEVEL}
