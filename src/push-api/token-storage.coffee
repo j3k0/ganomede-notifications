@@ -7,7 +7,6 @@ class TokenStorage
   # Adds token to redis.
   # callback(err, added)
   add: (token, callback) ->
-    @redis.spop token.key
     @redis.sadd token.key, token.value, (err, nAdded) ->
       callback(err, if err then false else nAdded == 1)
 
