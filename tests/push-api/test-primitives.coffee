@@ -49,35 +49,55 @@ describe 'TokenStorage', () ->
   storage = new TokenStorage(redis)
   token = Token.fromPayload(data)
 
-  before (done) ->
-    redis.flushdb(done)
+  describe '#add()', () ->
+    before (done) -> redis.flushdb(done)
 
-  it 'adds token to store', (done) ->
-    storage.add token, (err, added) ->
-      expect(err).to.be(null)
-      expect(added).to.be(true)
-
-      redis.smembers token.key, (err, members) ->
+    it 'adds token to store', (done) ->
+      storage.add token, (err, added) ->
         expect(err).to.be(null)
-        expect(members).to.be.an(Array)
-        expect(members).to.have.length(1)
-        expect(members[0]).to.eql(token.value)
+        expect(added).to.be(true)
+
+        redis.hgetall token.key, (err, obj) ->
+          expect(err).to.be(null)
+          expect(obj).to.eql({'apn': token.value})
+          done()
+
+    it 'does not store duplicate tokens', (done) ->
+      storage.add token, (err, added) ->
+        expect(err).to.be(null)
+        expect(added).to.be(false)
         done()
 
-  it 'does not store duplicate tokens', (done) ->
-    storage.add token, (err, added) ->
-      expect(err).to.be(null)
-      expect(added).to.be(false)
-      done()
+    it 'updates old tokens of same type', (done) ->
+      updatedData = tokenData('apn', 'new-apn-token')
+      updatedToken = Token.fromPayload(updatedData)
 
-  it 'retrieves user\'s tokens for certain game', (done) ->
-    storage.get data.username, data.app, (err, tokens) ->
-      expect(err).to.be(null)
-      expect(tokens).to.be.an(Array)
-      expect(tokens).to.have.length(1)
-      expect(tokens.every (t) -> t instanceof Token).to.be(true)
-      expect(tokens[0]).to.eql(token)
-      done()
+      storage.add updatedToken, (err, added) ->
+        expect(err).to.be(null)
+        expect(added).to.be(false)
+        redis.hgetall token.key, (err, obj) ->
+          expect(err).to.be(null)
+          expect(obj).to.eql({'apn': 'apn:new-apn-token'})
+          done()
+
+  describe '#get()', () ->
+    before (done) -> redis.flushdb(done)
+    before (done) -> storage.add(token, done)
+
+    it 'retrieves user\'s tokens for certain game', (done) ->
+      storage.get data.username, data.app, (err, tokens) ->
+        expect(err).to.be(null)
+        expect(tokens).to.be.an(Array)
+        expect(tokens).to.have.length(1)
+        expect(tokens.every (t) -> t instanceof Token).to.be(true)
+        expect(tokens[0]).to.eql(token)
+        done()
+
+    it 'returns [] in case redis hash is missing for user', (done) ->
+      storage.get 'i-have-no-tokens', data.app, (err, tokens) ->
+        expect(err).to.be(null)
+        expect(tokens).to.be.eql([])
+        done()
 
 describe 'Task', () ->
   token = Token.fromPayload(tokenData())
