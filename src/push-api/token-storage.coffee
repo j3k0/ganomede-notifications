@@ -34,7 +34,6 @@ class TokenStorage
       ret = []
       if tokens
         ret = Object.keys(tokens).map (subkey) ->
-          parts = subkey.split(':')
           return new Token(key, fromHashSubkey(subkey, tokens[subkey]))
 
       callback(null, ret)
