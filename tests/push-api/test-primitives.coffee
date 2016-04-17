@@ -13,21 +13,27 @@ describe 'Token', () ->
   token = Token.fromPayload(data)
 
   it 'new Token() works', () ->
-    create = (k, v) -> new Token(k, v)
-    expect(create).withArgs('key', 'value').to.not.throwException()
-    expect(create('k', 'v')).to.be.a(Token)
+    create = (key, type, value) -> new Token(key, {type, value})
+    expect(create).withArgs('key', 'type', 'value').to.not.throwException()
+    expect(create('k', 't', 'v')).to.be.a(Token)
 
-  it 'keyed at `config.pushApi.tokensPrefix:username:app`', () ->
+  it 'key is `config.pushApi.tokensPrefix:username:app`', () ->
     expected = [config.pushApi.tokensPrefix, data.username, data.app].join(':')
     expect(token.key).to.be(expected)
-
-  it 'value is `type:token`', () ->
-    expected = [data.type, data.value].join(':')
-    expect(token.value).to.be(expected)
 
   it 'type is one of Token.TYPES', () ->
     expect(token.type).to.be(Token.APN)
     expect(token.type in Token.TYPES).to.be(true)
+
+  it 'device is defaultDevice', () ->
+    expect(token.device).to.be('defaultDevice')
+
+  it 'allows specify device', () ->
+    d = {key: 'k', type: 'apn', device: 'd', value: 'v'}
+    expect(new Token(d.key, d)).to.eql(d)
+
+  it 'value is `token`', () ->
+    expect(token.value).to.be(data.value)
 
   describe '#data()', () ->
     it 'returns token value without type', () ->
@@ -59,7 +65,7 @@ describe 'TokenStorage', () ->
 
         redis.hgetall token.key, (err, obj) ->
           expect(err).to.be(null)
-          expect(obj).to.eql({'apn': token.value})
+          expect(obj).to.eql({'apn:defaultDevice': token.value})
           done()
 
     it 'does not store duplicate tokens', (done) ->
@@ -77,7 +83,7 @@ describe 'TokenStorage', () ->
         expect(added).to.be(false)
         redis.hgetall token.key, (err, obj) ->
           expect(err).to.be(null)
-          expect(obj).to.eql({'apn': 'apn:new-apn-token'})
+          expect(obj).to.eql({'apn:defaultDevice': 'new-apn-token'})
           done()
 
   describe '#get()', () ->
