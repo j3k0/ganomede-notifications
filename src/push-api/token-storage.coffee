@@ -38,68 +38,76 @@ class TokenStorage
 
       callback(null, ret)
 
-  _upgrade: (from, to, callback) ->
+  # Scan redis db @from for push tokens in old format,
+  # upgrade them to new format.
+  _upgrade: (from, callback) ->
+    vasync = require('vasync')
     r = @redis
-    self = @
     if !from then from = 0
-    if !to then to = 4
-    prefix = Token.key('', '').slice(0, -2)
-    mask = "#{prefix}:*"
+    newPrefix = Token.key('', '').slice(0, -2)
+    oldPrefix = 'notifications:push-tokens'
+    mask = "#{oldPrefix}:*"
     upgradedTokens = {}
 
-    console.log('working with', {from, to, prefix, mask})
+    console.log('working with', {db: from, newPrefix, oldPrefix, mask})
 
-    require('vasync').waterfall([
+    vasync.waterfall([
+      # switch redis db
       (cb) -> r.select(from, cb)
-      (reply, cb) -> r.keys(mask, cb)
-      (keys, cb) ->
-        multi = r.multi()
-        keys.forEach (key) ->
-          multi.smembers(key)
-          multi.move(key, to)
-
-        console.log("moving #{keys.length}…")
-
-        multi.exec (err, replies) ->
+      # get keys of old sets
+      (reply, cb) ->
+        console.log('looking for keys to upgrade…')
+        r.keys mask, (err, keys) ->
           if (err) then return cb(err)
-          smembers = replies
-            .filter (r, idx) -> 0 == idx % 2 # replies to smembers command
-            .map (set, idx) -> {key: keys[idx], set}
-          cb(null, smembers)
-
-      (smembers, cb) ->
-        multi = r.multi()
+          oldKeys = keys.filter (key) -> -1 == key.indexOf(newPrefix)
+          cb(null, oldKeys)
+      # convert old values to new format
+      (keys, cb) ->
+        console.log("converting #{keys.length} keys…")
         tokensToCreate = []
 
-        smembers.forEach ({key, set}) ->
-          findFirst = (type) ->
-            ret = null
-            set.some (item) ->
-              if (item.indexOf(type) == 0)
-                ret = item
-                return true
-            return ret
+        findFirst = (type, set) ->
+          ret = null
+          set.some (item) ->
+            if (item.indexOf(type) == 0)
+              ret = item
+              return true
+          return ret
 
-          apn = findFirst(Token.APN)
-          gcm = findFirst(Token.GCM)
+        upgradeKey = (key, cb) ->
+          r.smembers key, (err, tokens) ->
+            if (err) then return cb(err)
+            apn = findFirst(Token.APN, tokens)
+            gcm = findFirst(Token.GCM, tokens)
+            newKey = key.replace(oldPrefix, newPrefix)
 
-          if (apn)
-            tokensToCreate.push(new Token(key, {
-              type: Token.APN,
-              value: apn.slice(Token.APN.length + 1)
-            }))
+            if (apn)
+              tokensToCreate.push(new Token(newKey, {
+                type: Token.APN,
+                value: apn.slice(Token.APN.length + 1)
+              }))
 
-          if (gcm)
-            tokensToCreate.push(new Token(key, {
-              type: Token.GCM
-              value: gcm.slice(Token.GCM.length + 1)
-            }))
+            if (gcm)
+              tokensToCreate.push(new Token(newKey, {
+                type: Token.GCM
+                value: gcm.slice(Token.GCM.length + 1)
+              }))
 
+            cb()
+
+        vasync.forEachParallel({
+          inputs: keys,
+          func: upgradeKey
+        }, (err) -> cb(err, tokensToCreate))
+      # save converted tokens into redis
+      (tokensToCreate, cb) ->
         if tokensToCreate.length == 0
           console.log("db #{from} has no tokens with prefix #{prefix}")
-          return
+          return cb()
 
-        console.log("upgrading #{tokensToCreate.length} tokens…")
+        console.log("saving #{tokensToCreate.length} upgraded tokens…")
+
+        multi = r.multi()
 
         tokensToCreate.forEach (token) ->
           multi.hset token.key, toHashSubkey(token), token.value
@@ -117,15 +125,16 @@ unless module.parent
   )
 
   from = process.env.DB_FROM
-  to = process.env.DB_TO
 
   process.on('beforeExit', redis.quit.bind(redis))
 
-  new TokenStorage(redis)._upgrade from, to, (err, results) ->
+  new TokenStorage(redis)._upgrade from, (err, results) ->
     if (err)
       console.error('failed', err)
       return process.exit(1)
 
-    console.log(require('util').inspect(results, {depth: 12}))
-    console.log('Done!')
+    nUpdated = results.filter((reply) -> reply == 0).length
+    nCreated = results.filter((reply) -> reply == 1).length
+
+    console.log "Done! Upgraded #{results.length} tokens:", {nUpdated, nCreated}
     process.exit(0)
