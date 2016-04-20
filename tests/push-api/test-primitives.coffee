@@ -20,6 +20,7 @@ describe 'Token', () ->
   it 'key is `config.pushApi.tokensPrefix:username:app`', () ->
     expected = [config.pushApi.tokensPrefix, data.username, data.app].join(':')
     expect(token.key).to.be(expected)
+    expect(token.key).to.match(/data-v2/)
 
   it 'type is one of Token.TYPES', () ->
     expect(token.type).to.be(Token.APN)
