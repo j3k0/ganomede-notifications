@@ -11,11 +11,14 @@ describe 'Sender.ApnSender', () ->
     key: config.pushApi.apn.key
   )
 
-  tokenVal = "#{Token.APN}:#{process.env.TEST_APN_TOKEN}"
-  token = new Token('key_dont_matter', tokenVal)
-  task = new Task(samples.notification(), [token])
-
   if process.env.hasOwnProperty('TEST_APN_TOKEN')
+    token = new Token('key_dont_matter', {
+      type: Token.APN,
+      value: process.env.TEST_APN_TOKEN
+    })
+
+    task = new Task(samples.notification(), [token])
+
     it 'sends notifications', (done) ->
       this.timeout(5000)
       apnSender.send task.convert(token.type), task.tokens

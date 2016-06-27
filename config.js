@@ -39,7 +39,7 @@ module.exports = {
     // Redis and its queues
     redisHost: process.env.REDIS_PUSHAPI_PORT_6379_TCP_ADDR || 'localhost',
     redisPort: +process.env.REDIS_PUSHAPI_PORT_6379_TCP_PORT || 6379,
-    tokensPrefix: [unversionedApi, 'push-tokens'].join(':'),
+    tokensPrefix: [unversionedApi, 'push-tokens', 'data-v2'].join(':'),
     notificationsPrefix: [unversionedApi, 'push-notifications'].join(':'),
 
     // When sending push notifications, sender cli will:
