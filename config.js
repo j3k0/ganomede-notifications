@@ -51,8 +51,8 @@ module.exports = {
     //  push notifications transported in parallel. Only about
     //  parallelSends can be running at any given moment.
     cli: {
-      readAhead: 10,
-      parallelSends: 10
+      readAhead: process.env.BATCH_SIZE || 10,
+      parallelSends: process.env.BATCH_SIZE || 10
     },
 
     // Apple related

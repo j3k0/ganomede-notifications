@@ -70,6 +70,8 @@ Variables available for service configuration (see [config.js](/config.js)):
    - `APN_KEY_FILEPATH` — Path to .pem file with APN private key
    - `GCM_API_KEY` — API key for Google Cloud Messaging
    - `NODE_ENV` - set to production to connect to the production gateway. Otherwise it will connect to the sandbox.
+ * Push Worker
+   - `BATCH_SIZE` — Size of the batch of messages to process each iteration (default: 10)
 
 AuthDB
 ------
