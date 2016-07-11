@@ -67,7 +67,9 @@ Variables available for service configuration (see [config.js](/config.js)):
    - `REDIS_PUSHAPI_PORT_6379_TCP_ADDR` — Redis host for storing push tokens
    - `REDIS_PUSHAPI_PORT_6379_TCP_PORT` — Redis port for storing push tokens
    - `APN_CERT_FILEPATH` — Path to .pem file with APN certificate
+   - `APN_CERT_BASE64` — Base64 encoded APN certificate (pem)
    - `APN_KEY_FILEPATH` — Path to .pem file with APN private key
+   - `APN_KEY_BASE64` — Base64 encoded APN private key (pem)
    - `GCM_API_KEY` — API key for Google Cloud Messaging
    - `NODE_ENV` - set to production to connect to the production gateway. Otherwise it will connect to the sandbox.
  * Push Worker
