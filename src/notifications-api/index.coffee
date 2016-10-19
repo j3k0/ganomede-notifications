@@ -7,8 +7,12 @@ PubSub = require './pubsub'
 Queue = require './queue'
 LongPoll = require './long-poll'
 
-sendError = (err, next) ->
-  log.error err
+sendError = (err, next, type='error') ->
+  log[type] err
+  next err
+
+sendShortError = (err, next, type='error') ->
+  log[type] err.message
   next err
 
 notificationsApi = (options={}) ->
@@ -71,7 +75,7 @@ notificationsApi = (options={}) ->
   authMiddleware = (req, res, next) ->
     authToken = req.params.authToken
     if !authToken
-      return sendError(new restify.InvalidContentError('invalid content'), next)
+      return sendShortError(new restify.InvalidContentError('invalid content'), next, 'warn')
 
     authdbClient.getAccount authToken, (err, account) ->
       if err || !account
