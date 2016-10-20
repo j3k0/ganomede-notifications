@@ -75,7 +75,8 @@ notificationsApi = (options={}) ->
   authMiddleware = (req, res, next) ->
     authToken = req.params.authToken
     if !authToken
-      return sendShortError(new restify.InvalidContentError('invalid content'), next, 'warn')
+      err = new restify.InvalidContentError('invalid content')
+      return sendShortError(err, next, 'warn')
 
     authdbClient.getAccount authToken, (err, account) ->
       if err || !account
