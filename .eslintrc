@@ -1,5 +1,10 @@
 {
+    "env": {
+      "node": true
+    },
     "rules": {
-        "strict": false
+        "strict": false,
+        "quotes": 0,
+        "no-process-exit": 0
     }
 }

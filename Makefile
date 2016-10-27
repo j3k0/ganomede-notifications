@@ -1,18 +1,23 @@
 BUNYAN_LEVEL?=1000
 
+MOCHA_FLAGS=--bail \
+	--recursive \
+	--require index.fix.js \
+	--compilers coffee:coffee-script/register
+
 all: install test
 
 check: install
-	./node_modules/.bin/eslint src/
+	./node_modules/.bin/eslint --config ./.eslintrc index.js index.fix.js config.js newrelic.js
 	./node_modules/.bin/coffeelint -q src tests
 	grep -R -n -A5 -i TODO src tests
 
 test: check
-	./node_modules/.bin/mocha -b --recursive --compilers coffee:coffee-script/register tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
+	./node_modules/.bin/mocha ${MOCHA_FLAGS}  tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
 
 coverage: test
 	@mkdir -p doc
-	./node_modules/.bin/mocha -b --recursive --compilers coffee:coffee-script/register --require blanket -R html-cov tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL} > doc/coverage.html
+	./node_modules/.bin/mocha ${MOCHA_FLAGS} --require blanket -R html-cov tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL} > doc/coverage.html
 	@echo "coverage exported to doc/coverage.html"
 
 run: check

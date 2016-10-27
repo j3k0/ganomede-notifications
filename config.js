@@ -1,14 +1,14 @@
 var path = require('path');
 var pkg = require("./package.json");
 
-var unversionedApi = removeServiceVersion(pkg.api);
-
 function removeServiceVersion (name) {
   var pos = name.search(/\/v\d+/);
-  return -1 == pos
+  return -1 === pos
     ? name
     : name.slice(0, pos);
 }
+
+var unversionedApi = removeServiceVersion(pkg.api);
 
 module.exports = {
   port: +process.env.PORT || 8000,
