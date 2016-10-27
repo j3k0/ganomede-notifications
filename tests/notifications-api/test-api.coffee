@@ -16,7 +16,7 @@ helpers = require './helpers'
 
 go = supertest.bind(supertest, server)
 INVALID_SECRET = 'INVALID_SECRET'
-API_SECRET = process.env.API_SECRET = 'API_SECRET'
+API_SECRET = config.secret
 LP_MILLIS = 300 # if this is too low, we won't be able to put message in redis
                 # in time for testing long poll triggering on new message
 NEW_MESSAGE_ID = 3
@@ -170,8 +170,19 @@ describe "Notifications API", () ->
           expect(res.body).to.eql([])
           done()
 
+    it 'spoofable via API_SECRET.username', (done) ->
+      go()
+        .get(endpoint("/auth/#{config.secret}.alice/messages"))
+        .query({after: NEW_MESSAGE_ID})
+        .expect(200, [], done)
+
     it 'replies with HTTP 401 to invalid auth token', (done) ->
       go()
         .get endpoint("/auth/invalid-token/messages")
         .expect 401, done
+
+    it 'replies HTTP 401 to invalid API_SECRET auth', (done) ->
+      go()
+        .get(endpoint("/auth/invalid-#{config.secret}.alice/messages"))
+        .expect(401, done)
 

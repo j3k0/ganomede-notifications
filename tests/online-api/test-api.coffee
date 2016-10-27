@@ -97,4 +97,19 @@ describe 'Online API', () ->
           expect(res.body).to.eql([ 'jdoe', 'bob', 'alice' ])
           done()
 
+    it 'allows username spoofing via API_SECRET', (done) ->
+      go()
+        .post(endpoint("/auth/#{config.secret}.whoever/online"))
+        .expect(200, done)
+
+    it 'requires valid auth token', (done) ->
+      go()
+        .post endpoint('/auth/invalid-token/online')
+        .expect(401, done)
+
+    it 'replies HTTP 401 to invalid API_SECRET auth', (done) ->
+      go()
+        .post(endpoint("/auth/invalid-#{config.secret}.alice/online"))
+        .expect(401, done)
+
 # vim: ts=2:sw=2:et:

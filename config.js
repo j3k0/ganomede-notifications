@@ -16,6 +16,17 @@ module.exports = {
   longPollDurationMillis: 30000,
   removeServiceVersion: removeServiceVersion,
   debug: process.env.NODE_ENV !== 'production',
+  secret: (function () {
+    const has = process.env.hasOwnProperty('API_SECRET');
+    const val = process.env.API_SECRET;
+    const ok = has && val && (typeof val === 'string') && (val.length > 0);
+
+    if (!ok) {
+      throw new Error('process.env.API_SECRET must be non-empty string')
+    }
+
+    return val;
+  }()),
 
   authdb: {
     host: process.env.REDIS_AUTH_PORT_6379_TCP_ADDR || 'localhost',

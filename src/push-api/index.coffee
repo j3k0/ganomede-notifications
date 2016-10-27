@@ -24,8 +24,10 @@ module.exports = (options={}) ->
     port: config.authdb.port
   )
 
-  authMiddleware = helpers.restify.middlewares.authdb.create
-    authdbClient: authdb
+  authMiddleware = helpers.restify.middlewares.authdb.create({
+    authdbClient: authdb,
+    secret: config.secret
+  })
 
   savePushToken = (req, res, next) ->
     unless req.body && req.body.app && req.body.type && req.body.value &&

@@ -1,5 +1,6 @@
 redis = require 'redis'
 authdb = require "authdb"
+ganomedeHelpers = require 'ganomede-helpers'
 OnlineList = require './online-list'
 config = require '../../config'
 log = require('../log').child(module: "online-api")
@@ -31,17 +32,10 @@ createApi = (options={}) ->
   #
 
   # Populates req.params.user with value returned from authDb.getAccount()
-  authMiddleware = (req, res, next) ->
-    authToken = req.params.authToken
-    if !authToken
-      return sendError(new restify.InvalidContentError('invalid content'), next)
-
-    authdbClient.getAccount authToken, (err, account) ->
-      if err || !account
-        return sendError(new restify.UnauthorizedError('not authorized'), next)
-
-      req.params.user = account
-      next()
+  authMiddleware = ganomedeHelpers.restify.middlewares.authdb.create({
+    authdbClient,
+    secret: config.secret
+  })
 
   # Update the list of online players
   updateOnlineListMiddleware = (req, res, next) ->
@@ -83,12 +77,12 @@ createApi = (options={}) ->
       next()
 
   api = {}
-  
+
   api.addRoutes = (prefix, server) ->
 
     # Get random list on online users
     server.get("/#{prefix}/online", getOnlineList)
- 
+
     # Sets the player as online, return list of online users
     server.post("/#{prefix}/auth/:authToken/online",
       authMiddleware, updateOnlineListMiddleware, getOnlineList)

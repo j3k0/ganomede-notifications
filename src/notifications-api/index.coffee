@@ -2,6 +2,7 @@ log = require "../log"
 authdb = require "authdb"
 redis = require "redis"
 restify = require "restify"
+ganomedeHelpers = require 'ganomede-helpers'
 config = require '../../config'
 PubSub = require './pubsub'
 Queue = require './queue'
@@ -72,25 +73,17 @@ notificationsApi = (options={}) ->
   #
 
   # Populates req.params.user with value returned from authDb.getAccount()
-  authMiddleware = (req, res, next) ->
-    authToken = req.params.authToken
-    if !authToken
-      err = new restify.InvalidContentError('invalid content')
-      return sendShortError(err, next, 'warn')
-
-    authdbClient.getAccount authToken, (err, account) ->
-      if err || !account
-        return sendError(new restify.UnauthorizedError('not authorized'), next)
-
-      req.params.user = account
-      next()
+  authMiddleware = ganomedeHelpers.restify.middlewares.authdb.create({
+    authdbClient,
+    secret: config.secret
+  })
 
   # Check the API secret key validity
   apiSecretMiddleware = (req, res, next) ->
     secret = req.body?.secret
     if !secret
       return sendError(new restify.InvalidContentError('invalid content'), next)
-    if secret != process.env.API_SECRET
+    if secret != config.secret
       return sendError(new restify.UnauthorizedError('not authorized'), next)
 
     # Make sure secret isn't sent in clear to the users

@@ -13,11 +13,14 @@ check: install
 	grep -R -n -A5 -i TODO src tests
 
 test: check
-	./node_modules/.bin/mocha ${MOCHA_FLAGS}  tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
+	API_SECRET=1 ./node_modules/.bin/mocha ${MOCHA_FLAGS}  tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
+
+testw:
+	API_SECRET=1 ./node_modules/.bin/mocha --watch ${MOCHA_FLAGS}  tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
 
 coverage: test
 	@mkdir -p doc
-	./node_modules/.bin/mocha ${MOCHA_FLAGS} --require blanket -R html-cov tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL} > doc/coverage.html
+	API_SECRET=1 ./node_modules/.bin/mocha ${MOCHA_FLAGS} --require blanket -R html-cov tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL} > doc/coverage.html
 	@echo "coverage exported to doc/coverage.html"
 
 run: check
