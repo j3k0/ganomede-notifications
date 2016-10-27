@@ -21,11 +21,8 @@ module.exports = {
     const val = process.env.API_SECRET;
     const ok = has && val && (typeof val === 'string') && (val.length > 0);
 
-    if (!ok) {
-      throw new Error('process.env.API_SECRET must be non-empty string')
-    }
-
-    return val;
+    // No need to throw, ganomede-helpers will throw for us.
+    return ok ? val : null;
   }()),
 
   authdb: {
