@@ -1,4 +1,5 @@
 require('coffee-script/register');
+require('./index.fix');
 
 // Use New Relic if LICENSE_KEY has been specified.
 if (process.env.NEW_RELIC_LICENSE_KEY) {
@@ -18,7 +19,7 @@ if (cluster.isMaster) {
     // master
     log.info("starting up...", {env: process.env, config: config});
     cluster.fork();
-    cluster.on("disconnect", function(worker) {
+    cluster.on("disconnect", function() {
         log.error("disconnect!");
         cluster.fork();
     });
@@ -26,7 +27,6 @@ if (cluster.isMaster) {
 else {
 
     // worker
-    var restify = require("restify");
     var main = require("./src/main");
     var server = require('./src/server');
 

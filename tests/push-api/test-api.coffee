@@ -66,8 +66,21 @@ describe 'Push API', () ->
         .send data
         .expect 400, done
 
+    it 'spoofable via API_SECRET', (done) ->
+      go()
+        .post endpoint("/auth/#{config.secret}.alice/push-token")
+        .send samples.tokenData()
+        .expect 200, done
+
     it 'requires auth', (done) ->
       go()
         .post endpoint('/auth/invalid-auth-token/push-token')
         .send samples.tokenData()
         .expect 401, done
+
+    it 'requires valid API_SECRET', (done) ->
+      go()
+        .post endpoint("/auth/invalid-#{config.secert}.someone/push-token")
+        .send samples.tokenData()
+        .expect 401, done
+

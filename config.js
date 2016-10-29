@@ -1,14 +1,14 @@
 var path = require('path');
 var pkg = require("./package.json");
 
-var unversionedApi = removeServiceVersion(pkg.api);
-
 function removeServiceVersion (name) {
   var pos = name.search(/\/v\d+/);
-  return -1 == pos
+  return -1 === pos
     ? name
     : name.slice(0, pos);
 }
+
+var unversionedApi = removeServiceVersion(pkg.api);
 
 module.exports = {
   port: +process.env.PORT || 8000,
@@ -16,6 +16,14 @@ module.exports = {
   longPollDurationMillis: 30000,
   removeServiceVersion: removeServiceVersion,
   debug: process.env.NODE_ENV !== 'production',
+  secret: (function () {
+    const has = process.env.hasOwnProperty('API_SECRET');
+    const val = process.env.API_SECRET;
+    const ok = has && val && (typeof val === 'string') && (val.length > 0);
+
+    // No need to throw, ganomede-helpers will throw for us.
+    return ok ? val : null;
+  }()),
 
   authdb: {
     host: process.env.REDIS_AUTH_PORT_6379_TCP_ADDR || 'localhost',

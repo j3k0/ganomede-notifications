@@ -1,4 +1,4 @@
-FROM node:0.10
+FROM node:7
 EXPOSE 8000
 MAINTAINER Jean-Christophe Hoelt <hoelt@fovea.cc>
 RUN useradd app -d /home/app
@@ -11,6 +11,7 @@ RUN npm install
 
 COPY Makefile config.js index.js newrelic.js coffeelint.json .eslintignore .eslintrc push-worker.sh /home/app/code/
 COPY index.js /home/app/code/index.js
+COPY index.fix.js /home/app/code/index.fix.js
 COPY tests /home/app/code/tests
 COPY src /home/app/code/src
 
