@@ -38,25 +38,24 @@ class ListManager
     return true
 
   add: (listId, profile, callback) ->
-    done = (err) =>
-      if (err)
-        log.error("ListManager failed to update list #{id}", err)
-        return callback && callback(err)
-
-      if (callback)
-        @get(listId, callback)
-
     if not @userVisible(profile)
-      return done()
+      return @get(listId, callback)
 
     key = @key(listId)
 
     # add user or update his position
     # remove oldest users
+    # fetch updated list
     @redis.multi()
       .zadd(key, -Date.now(), profile.username)
       .zremrangebyrank(key, @maxRedisIndex, -1)
-      .exec(done)
+      .zrange(key, 0, -1)
+      .exec (err, replies) ->
+        if (err)
+          log.error("ListManager failed to update list #{id}", err)
+          return callback(err)
+
+        callback(null, replies[2])
 
   get: (listId, callback) ->
     key = @key(listId)
