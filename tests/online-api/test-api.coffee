@@ -1,13 +1,10 @@
-vasync = require 'vasync'
 expect = require 'expect.js'
 supertest = require 'supertest'
-fakeRedis = require 'fakeredis'
+sinon = require 'sinon'
 fakeAuthdb = require '../fake-authdb'
 onlineApi = require '../../src/online-api'
-OnlineList = require '../../src/online-api/online-list'
 server = require '../../src/server'
 config = require '../../config'
-common = require './common'
 
 go = supertest.bind(supertest, server)
 
@@ -15,92 +12,80 @@ endpoint = (path) ->
   return "/#{config.routePrefix}#{path || ''}"
 
 describe 'Online API', () ->
-  redis = fakeRedis.createClient(__filename)
   authdb = fakeAuthdb.createClient()
-  onlineList = new OnlineList(redis, {maxSize: 5})
+  someJson = ['alice']
+  managerSpy = {
+    add: sinon.spy((listId, profile, cb) -> setImmediate(cb, null, someJson)),
+    get: sinon.spy((listId, cb) -> setImmediate(cb, null, someJson))
+  }
 
-  before (cb) ->
+  aliceProfile = {
+    username: 'alice',
+    email: 'alice@example.com'
+  }
 
-    for username in common.TEST_LIST
-      authdb.addAccount "token-#{username}", username: username
+  before (done) ->
+    authdb.addAccount('token-alice', aliceProfile)
 
-    api = onlineApi.createApi
-      onlineList: onlineList
+    api = onlineApi({
+      onlineList: managerSpy,
       authdbClient: authdb
+    })
 
-    # This allows us to add user to an onlie list.
-    server.get endpoint('/i-am-online/:username'),
-    # First we fake AuthDB middleware (no auth logic)
-    (req, res, next) ->
-      req.params.user =
-        username: req.params.username
-        email: "notimportant@gmail.com"
-      next()
-    ,
-    # Then we use `api` provided middleware that registers user and
-    # would normaly be placed before some common endpoint users hit.
-    api.updateOnlineListMiddleware
-    ,
-    # Respond something, so we know everyting went well.
-    (req, res, next) ->
-      res.json({ok: true})
-      next()
-
-    # This sets up /online endpoint that returns list of recently
-    # online users.
-    api.addRoutes config.routePrefix, server
-
-    server.listen(1337, redis.flushdb.bind(redis, cb))
+    api(config.routePrefix, server)
+    server.listen(1337, done)
 
   after (cb) ->
     server.close(cb)
 
-  describe 'updateOnlineListMiddleware()', () ->
-    hitEndpoint = (username, cb) ->
-      go()
-        .get(endpoint("/i-am-online/#{username}"))
-        .expect(200, {ok: true}, cb)
-
-    # Add users to list 1 by 1.
-    before (done) ->
-      usernames = common.TEST_LIST
-      vasync.forEachPipeline
-        inputs: usernames
-        func: (username, cb) ->
-          # Delay by 1ms for predictable order.
-          setTimeout(hitEndpoint.bind(null, username, cb), 1)
-      , done
-
-    it 'hitting middleware adds user to the list', (done) ->
-      onlineList.get (err, list) ->
-        expect(err).to.be(null)
-        expect(list).to.eql(common.reverseArray(common.TEST_LIST))
-        done()
-
   describe 'GET /online', () ->
-    it 'returns json list of usernames of recently online users', (done) ->
+    it 'fetches default list', (done) ->
       go()
-        .get endpoint('/online')
-        .expect 200
+        .get(endpoint('/online'))
+        .expect(200, someJson)
         .end (err, res) ->
           expect(err).to.be(null)
-          expect(res.body).to.eql(common.reverseArray(common.TEST_LIST))
+          expect(managerSpy.get.lastCall.args[0]).to.be(undefined)
+          done()
+
+    it 'fetches specific lists', (done) ->
+      go()
+        .get endpoint('/online/specific-list')
+        .expect(200, someJson)
+        .end (err, res) ->
+          expect(err).to.be(null)
+          expect(managerSpy.get.lastCall.args[0]).to.eql('specific-list')
           done()
 
   describe 'POST /auth/:authToken/online', () ->
-    it 'allows to set user as online', (done) ->
+    it 'adds to default list', (done) ->
       go()
-        .post endpoint('/auth/token-alice/online')
-        .expect 200
+        .post(endpoint('/auth/token-alice/online'))
+        .expect(200, someJson)
         .end (err, res) ->
           expect(err).to.be(null)
-          expect(res.body).to.eql([ 'jdoe', 'bob', 'alice' ])
+          expect(managerSpy.add.lastCall.args.slice(0, -1)).to.eql([
+            undefined,
+            aliceProfile
+          ])
+          done()
+
+    it 'adds to specific list', (done) ->
+      go()
+        .post(endpoint('/auth/token-alice/online/specific-list'))
+        .expect(200, someJson)
+        .end (err, res) ->
+          expect(err).to.be(null)
+          expect(managerSpy.add.lastCall.args.slice(0, -1)).to.eql([
+            'specific-list',
+            aliceProfile
+          ])
           done()
 
     it 'allows username spoofing via API_SECRET', (done) ->
       go()
         .post(endpoint("/auth/#{config.secret}.whoever/online"))
-        .expect(200, done)
+        .expect(200, someJson, done)
 
     it 'requires valid auth token', (done) ->
       go()

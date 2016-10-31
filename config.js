@@ -40,7 +40,10 @@ module.exports = {
   onlineList: {
     redisHost: process.env.REDIS_ONLINELIST_PORT_6379_TCP_ADDR || 'localhost',
     redisPort: +process.env.REDIS_ONLINELIST_PORT_6379_TCP_PORT || 6379,
-    maxSize: +process.env.ONLINE_LIST_SIZE || 20
+    maxSize: +process.env.ONLINE_LIST_SIZE || 20,
+    invisibleEmailRe: process.env.hasOwnProperty('ONLINE_LIST_INVISIBLE_MATCH')
+      ? new RegExp(process.env.ONLINE_LIST_INVISIBLE_MATCH)
+      : null
   },
 
   pushApi: {

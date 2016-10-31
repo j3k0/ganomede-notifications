@@ -2,7 +2,7 @@ log = require "./log"
 aboutApi = require "./about-api"
 pingApi = require "./ping-api"
 notificationsApi = require "./notifications-api"
-onlineApiLib = require './online-api'
+createOnlineApi = require './online-api'
 pushApiLib = require './push-api'
 
 addRoutes = (prefix, server) ->
@@ -15,8 +15,8 @@ addRoutes = (prefix, server) ->
   aboutApi.addRoutes prefix, server
 
   # Online list
-  onlineApi = onlineApiLib.createApi()
-  onlineApi.addRoutes prefix, server
+  onlineApi = createOnlineApi()
+  onlineApi(prefix, server)
 
   # Push API
   pushApi = pushApiLib()
@@ -24,7 +24,6 @@ addRoutes = (prefix, server) ->
 
   # Notifications
   api = notificationsApi(
-    updateOnlineListMiddleware: onlineApi.updateOnlineListMiddleware
     addPushNotification: pushApi.addPushNotification
   )
   api(prefix, server)

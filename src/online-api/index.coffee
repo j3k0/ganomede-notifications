@@ -1,98 +1,68 @@
 redis = require 'redis'
 authdb = require "authdb"
 ganomedeHelpers = require 'ganomede-helpers'
-OnlineList = require './online-list'
+ListManager = require './list-manager'
 config = require '../../config'
 log = require('../log').child(module: "online-api")
 restify = require "restify"
 
-sendError = (err, next) ->
-  log.error err
-  next err
-
 createApi = (options={}) ->
-  onlineList = options.onlineList
-
-  # configure authdb client
-  authdbClient = options.authdbClient || authdb.createClient(
-    host: config.authdb.host
-    port: config.authdb.port)
-
-  if !onlineList
-    client = redis.createClient(
+  onlineList = options.onlineList || new ListManager(
+    redis.createClient(
       config.onlineList.redisPort,
       config.onlineList.redisHost,
-        no_ready_check: true
-    )
+      {no_ready_check: true}
+    ),
 
-    onlineList = new OnlineList(client, {maxSize: config.onlineList.maxSize})
-
-  #
-  # Middlewares
-  #
+    {
+      maxSize: config.onlineList.maxSize,
+      invisibleEmailRe: config.onlineList.invisibleEmailRe
+    }
+  )
 
   # Populates req.params.user with value returned from authDb.getAccount()
   authMiddleware = ganomedeHelpers.restify.middlewares.authdb.create({
-    authdbClient,
+    authdbClient: options.authdbClient || authdb.createClient(
+      host: config.authdb.host
+      port: config.authdb.port
+    ),
     secret: config.secret
   })
 
-  # Update the list of online players
-  updateOnlineListMiddleware = (req, res, next) ->
-    username = req.params?.user?.username
-    email = req.params?.user?.email
-    if username and email and !isInvisible email
-      onlineList.add username
-    next()
-
-  #
-  # Utils
-  #
-
-  # Some players should stay invisible
-  invisibleMatch = options.invisibleMatch ||
-    process.env.ONLINE_LIST_INVISIBLE_MATCH
-  isInvisible = options.isInvisible
-  if !isInvisible
-    if invisibleMatch
-      isInvisible = (email) ->
-        email.match(invisibleMatch)
-    else
-      isInvisible = -> false
-
-  #
-  # Endpoints
-  #
-
-  # Return list of usernames most recently online
-  getOnlineList = (req, res, next) ->
-    onlineList.get (err, list) ->
+  # Return list of usernames most recently online.
+  fetchList = (req, res, next) ->
+    listId = req.params?.listId
+    onlineList.get req.params.listId, (err, list) ->
       if (err)
-        log.error('onlineListEndpoint() failed', {err: err})
-        restErr = new restify.InternalServerError()
-        log.error(restErr)
-        return next(restErr)
+        log.error('fetchList() failed', {listId, err})
+        return next(new restify.InternalServerError())
 
       res.json(list)
       next()
 
-  api = {}
+  # Adds user to the list and returns updated list.
+  updateList = (req, res, next) ->
+    listId = req.params?.listId
+    profile = req.params?.user
 
-  api.addRoutes = (prefix, server) ->
+    onlineList.add listId, profile, (err, newList) ->
+      if (err)
+        log.error('updateList() failed', {listId, err})
+        return next(new restify.InternalServerError())
 
-    # Get random list on online users
-    server.get("/#{prefix}/online", getOnlineList)
+      res.json(newList)
+      next()
 
-    # Sets the player as online, return list of online users
-    server.post("/#{prefix}/auth/:authToken/online",
-      authMiddleware, updateOnlineListMiddleware, getOnlineList)
+  return (prefix, server) ->
+    # Fetch lists
+    server.get("/#{prefix}/online", fetchList)
+    server.get("/#{prefix}/online/:listId", fetchList)
 
-  # Export the updateOnlineList middleware
-  api.updateOnlineListMiddleware = updateOnlineListMiddleware
+    # Update lists
+    updateStack = [authMiddleware, updateList]
+    server.post("/#{prefix}/auth/:authToken/online", updateStack)
+    server.post("/#{prefix}/auth/:authToken/online/:listId", updateStack)
 
-  return api
-
-module.exports =
-  createApi: createApi
+module.exports = createApi
 
 # vim: ts=2:sw=2:et:
