@@ -29,7 +29,7 @@
     "newrelic": "^1.37.2",
     "node-gcm": "^0.12.0",
     "redis": "^2.6.2",
-    "restify": "^2.8.5",
+    "restify": "^4.1.0",
     "vasync": "^1.6.2"
   },
   "config": {
