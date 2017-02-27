@@ -146,15 +146,21 @@ If secret is invalid.
 
 The value of "secret" should be equal to the `API_SECRET` environment variable.
 
-# Online User List [/notifications/v1/online]
+# Legacy Online User List [/notifications/v1/online]
 
-Every time client sends request for retrieving messages for a particular user, that user is added to a top of the list of recently online users in Redis.
+Alias to `/notifications/v1/online/default` (listid = default)
 
-List is trimmed at `ONLINE_LIST_SIZE` most recent users.
+# Legacy Online status [/notifications/v1/auth/:authToken/online]
+
+Alias to `/auth/:authToken/online/default` (listid = default)
+
+# Online User List [/notifications/v1/online/:listid]
+
+List of players in the the `listid` list of online users.
 
 ## Retrieve List [GET]
 
-Will return a list of usernames of most recently online users. This list is publicly available (no `API_SECRET` or auth required).
+Will return a list of usernames of most recently online users. Lists are publicly available (no `API_SECRET` or auth required).
 
 ### response [200] OK
 
@@ -164,13 +170,15 @@ Will return a list of usernames of most recently online users. This list is publ
       "bob"
     ]
 
-# Online status [/auth/:authToken/online]
+# Online status [/notifications/v1/auth/:authToken/online/:listid]
 
 User is online.
 
 ## Set as online [POST]
 
-Add user to the list of online players, returns the list.
+Add user to the list of online players with id `listid`, returns the list of users.
+
+The list is trimmed at `ONLINE_LIST_SIZE` most recent users.
 
 ### response [200] OK
 
