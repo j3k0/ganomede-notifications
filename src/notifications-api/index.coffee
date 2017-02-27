@@ -7,6 +7,7 @@ config = require '../../config'
 PubSub = require './pubsub'
 Queue = require './queue'
 LongPoll = require './long-poll'
+hasOwnProperty = Object.prototype.hasOwnProperty
 
 sendError = (err, next, type='error') ->
   log[type] err
@@ -113,7 +114,7 @@ notificationsApi = (options={}) ->
     query =
       username: req.params.user.username
 
-    if req.query.hasOwnProperty('after')
+    if hasOwnProperty.call(req.query, 'after')
       query.after = +req.query.after
       if !isFinite(query.after)
         # || query.after < 0 (negative "after" allows to retrieve all message)
@@ -149,7 +150,7 @@ notificationsApi = (options={}) ->
 
       # If message has push object, it is also meant to be sent as
       # push notification.
-      if message.hasOwnProperty('push')
+      if hasOwnProperty.call(message, 'push')
         addPushNotification(message)
 
       reply =
