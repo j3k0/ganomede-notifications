@@ -66,7 +66,6 @@ notificationsApi = (options={}) ->
   if process.env.TESTUSER_AUTH_TOKEN
     authdbClient.addAccount process.env.TESTUSER_AUTH_TOKEN,
       username: "testuser"
-      email: "testuser@fovea.cc"
       , (err, result) ->
 
   #

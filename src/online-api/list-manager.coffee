@@ -5,13 +5,13 @@ log = require '../log'
 # Options:
 #   maxSize
 #   prefix
-#   invisibleEmailRe
+#   invisibleUsernameRegExp
 class ListManager
   constructor: (redis, options={}) ->
     @redis = redis
     @maxRedisIndex = options.maxSize
     @prefix = options.prefix || 'online-list'
-    @invisibleEmailRe = options.invisibleEmailRe || null
+    @invisibleUsernameRegExp = options.invisibleUsernameRegExp || null
 
     if !@redis
       throw new Error('OnlineList() requires a Redis client')
@@ -24,15 +24,14 @@ class ListManager
     return "#{@prefix}:#{id}"
 
   userVisible: (profile) ->
-    valid = profile? && profile.username && profile.email
-    if (!valid)
+    if !profile?.username
       return false
 
     if profile._secret
       return false
 
-    if @invisibleEmailRe
-      hidden = @invisibleEmailRe.test(profile.email)
+    if @invisibleUsernameRegExp
+      hidden = @invisibleUsernameRegExp.test(profile.username)
       return !hidden
 
     return true

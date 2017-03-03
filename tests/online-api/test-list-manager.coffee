@@ -5,9 +5,9 @@ ListManager = require '../../src/online-api/list-manager'
 
 describe 'ListManager', () ->
   redisClient = fakeRedis.createClient(__filename)
-  alice = {username: 'alice', email: 'alice@example.com'}
-  bob = {username: 'bob', email: 'bob@example.com'}
-  jdoe = {username: 'jdoe', email: 'jdoe@example.com'}
+  alice = {username: 'alice'}
+  bob = {username: 'bob'}
+  jdoe = {username: 'jdoe'}
   invisible = {_secret: true}
 
   before (cb) -> redisClient.flushdb(cb)
@@ -15,29 +15,29 @@ describe 'ListManager', () ->
   describe '#userVisible()', () ->
     createList = (re) -> new ListManager(redisClient, {
       maxSize: 3,
-      invisibleEmailRe: re
+      invisibleUsernameRegExp: re
     })
 
     it 'authorized users are visible', () ->
-      user = {username: 'jdoe', email: 'jdoe@example.com'}
+      user = {username: 'jdoe'}
       expect(createList().userVisible(user)).to.be(true)
 
-    it 'users without email are NOT visible', () ->
-      user = {username: 'no-email'}
+    it 'users without username are NOT visible', () ->
+      user = {}
       expect(createList().userVisible(user)).to.be(false)
 
-    it 'users with email matching invisible regexp are NOT visible', () ->
-      user = {username: 'jdoe', email: 'jdoe@example.com'}
-      re = /example\.com$/
+    it 'users with username matching invisible regexp are NOT visible', () ->
+      user = {username: 'testjdoe'}
+      re = /^test/
       expect(createList(re).userVisible(user)).to.be(false)
 
-    it 'users with email not matching regexp are visible', () ->
-      user = {username: 'jdoe', email: 'jdoe@gmail.com'}
-      re = /example\.com$/
+    it 'users with username not matching regexp are visible', () ->
+      user = {username: 'jdoetest'}
+      re = /^test/
       expect(createList(re).userVisible(user)).to.be(true)
 
     it '_secret users are NOT visible', () ->
-      user = {username: 'fake', email: 'api-secret@auth.com', _secret: true}
+      user = {username: 'fake', _secret: true}
       expect(createList().userVisible(user)).to.be(false)
 
   describe '#add()', () ->
@@ -100,13 +100,19 @@ describe 'ListManager', () ->
     it 'retrives default list', (done) ->
       manager.get undefined, (err, list) ->
         expect(err).to.be(null)
-        expect(list).to.eql([jdoe.username, bob.username, alice.username])
+        expect(list.length).to.equal(3)
+        expect(list.indexOf(jdoe.username)).to.be.greaterThan(-1)
+        expect(list.indexOf(bob.username)).to.be.greaterThan(-1)
+        expect(list.indexOf(alice.username)).to.be.greaterThan(-1)
         done()
 
     it 'retrives not-default list', (done) ->
       manager.get 'not-default', (err, list) ->
         expect(err).to.be(null)
-        expect(list).to.eql([jdoe.username, bob.username, alice.username])
+        expect(list.length).to.equal(3)
+        expect(list.indexOf(jdoe.username)).to.be.greaterThan(-1)
+        expect(list.indexOf(bob.username)).to.be.greaterThan(-1)
+        expect(list.indexOf(alice.username)).to.be.greaterThan(-1)
         done()
 
     it 'treats missing lists as empty', (done) ->

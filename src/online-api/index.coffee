@@ -16,7 +16,7 @@ createApi = (options={}) ->
 
     {
       maxSize: config.onlineList.maxSize,
-      invisibleEmailRe: config.onlineList.invisibleEmailRe
+      invisibleUsernameRegExp: config.onlineList.invisibleUsernameRegExp
     }
   )
 
