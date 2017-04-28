@@ -4,7 +4,7 @@ app:
      - ./src:/home/app/code/src
      - ./tests:/home/app/code/tests
      - ./doc:/home/app/code/doc
-    command: make run
+    command: node index.js
     ports:
      - "8000:8000"
     links:
