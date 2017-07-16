@@ -29,11 +29,15 @@ Notifications containing `.push` object will also be sent as push notifications 
 { "app": "triominos/v1"  // String, required  Which app to notify
 
   "title": [ "localization-key", "args..." ],   // String[], optional
-  "message": [ "localization-key", "args..." ]  // String[], optional
+  "message": [ "localization-key", "args..." ], // String[], optional
+  "titleArgsTypes": [ ],                        // String[], optional
+  "messageArgsTypes": [ "username..." ]         // String[], optional
 }
 ```
 
 `.push.title` and `.push.message` must be String arrays of at least 1 length containing localization key at `[0]` followed by any number of localization arguments. If either title, or message, or both are not present, notificaiton alert will default to `config.pushApi.apn.defaultAlert` string.
+
+`.push.messageArgsTypes` and `.push.titleArgsTypes` defined the types of localization arguments. In case the type is `username` and notification module is linked with `ganomede-directory`, then the corresponding arguments will be translated to their 'name' alias (see [https://github.com/j3k0/ganomede-directory/](ganomede-directory) for more details).
 
 Relations
 ---------
@@ -64,6 +68,7 @@ Variables available for service configuration (see [config.js](/config.js)):
    - `REDIS_ONLINELIST_PORT_6379_TCP_ADDR` — Redis online list host
    - `REDIS_ONLINELIST_PORT_6379_TCP_PORT` — Redis online list port
  * Push Notifications API
+   - `DIRECTORY_PORT_8000_TCP_[ADDR|PORT|PROTOCOL]` - Link to ganomede-directory (optional)
    - `REDIS_PUSHAPI_PORT_6379_TCP_ADDR` — Redis host for storing push tokens
    - `REDIS_PUSHAPI_PORT_6379_TCP_PORT` — Redis port for storing push tokens
    - `APN_CERT_FILEPATH` — Path to .pem file with APN certificate
