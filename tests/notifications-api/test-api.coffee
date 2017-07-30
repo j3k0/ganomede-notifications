@@ -9,12 +9,11 @@ PubSub = require "../../src/notifications-api/pubsub"
 Queue = require "../../src/notifications-api/queue"
 onlineApiLib = require "../../src/online-api"
 LongPoll = require "../../src/notifications-api/long-poll"
-server = require '../../src/server'
+serverMod = require '../../src/server'
 config = require '../../config'
 samples = require './sample-data'
 helpers = require './helpers'
 
-go = supertest.bind(supertest, server)
 INVALID_SECRET = 'INVALID_SECRET'
 API_SECRET = config.secret
 LP_MILLIS = 300 # if this is too low, we won't be able to put message in redis
@@ -27,6 +26,8 @@ endpoint = (path) ->
 timeout = (millis, fn) -> setTimeout(fn, millis)
 
 describe "Notifications API", () ->
+  server = null
+  go = null
   redis = fakeRedis.createClient(__filename)
   authdb = fakeAuthdb.createClient()
   queue = new Queue(redis, {maxSize: config.redis.queueSize})
@@ -38,6 +39,8 @@ describe "Notifications API", () ->
     channel: config.redis.channel
 
   before (done) ->
+    server = serverMod.createServer()
+    go = supertest.bind(supertest, server)
     for own username, data of samples.users
       authdb.addAccount data.token, data.account
 

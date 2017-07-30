@@ -13,6 +13,10 @@ var unversionedApi = removeServiceVersion(pkg.api);
 module.exports = {
   port: +process.env.PORT || 8000,
   routePrefix: process.env.ROUTE_PREFIX || pkg.api,
+  http: {
+    port: +process.env.PORT || 8000,
+    prefix: process.env.ROUTE_PREFIX || pkg.api
+  },
   longPollDurationMillis: 30000,
   removeServiceVersion: removeServiceVersion,
   debug: process.env.NODE_ENV !== 'production',

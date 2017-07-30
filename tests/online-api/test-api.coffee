@@ -3,15 +3,15 @@ supertest = require 'supertest'
 sinon = require 'sinon'
 fakeAuthdb = require '../fake-authdb'
 onlineApi = require '../../src/online-api'
-server = require '../../src/server'
+serverMod = require '../../src/server'
 config = require '../../config'
 
-go = supertest.bind(supertest, server)
-
-endpoint = (path) ->
-  return "/#{config.routePrefix}#{path || ''}"
-
 describe 'Online API', () ->
+  go = null
+  server = null
+  endpoint = (path) ->
+    return "/#{config.routePrefix}#{path || ''}"
+
   authdb = fakeAuthdb.createClient()
   someJson = ['alice']
   managerSpy = {
@@ -25,6 +25,9 @@ describe 'Online API', () ->
   }
 
   before (done) ->
+    server = serverMod.createServer()
+    go = supertest.bind(supertest, server)
+
     authdb.addAccount('token-alice', aliceProfile)
 
     api = onlineApi({
