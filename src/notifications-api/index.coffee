@@ -94,9 +94,14 @@ notificationsApi = (options={}) ->
     longPoll.add query.username,
       () ->
         queue.getMessages query, (err, messages) ->
-          if err then sendError(err, next) else res.json(messages)
+          if err
+            sendError(err, next)
+          else
+            res.json(messages)
+            next()
       () ->
         res.json([])
+        next()
 
   #
   # Endpoints
