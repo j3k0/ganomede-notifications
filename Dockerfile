@@ -1,4 +1,6 @@
-FROM node:8-slim
+# Stick to node:7 until https://github.com/restify/node-restify/issues/1374 is fixed
+# (restify getHeaders infinite call stack)
+FROM node:7-slim
 
 EXPOSE 8000
 MAINTAINER Jean-Christophe Hoelt <hoelt@fovea.cc>
