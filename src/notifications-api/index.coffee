@@ -80,14 +80,8 @@ notificationsApi = (options={}) ->
 
   # Check the API secret key validity
   apiSecretMiddleware = (req, res, next) ->
-    secret = req.body?.secret
-    if !secret
-      return sendError(new restify.InvalidContentError('invalid content'), next)
-    if secret != config.secret
+    if !req.ganomede.secretMatches
       return sendError(new restify.UnauthorizedError('not authorized'), next)
-
-    # Make sure secret isn't sent in clear to the users
-    delete req.body.secret
     next()
 
   # Long Poll midlleware
