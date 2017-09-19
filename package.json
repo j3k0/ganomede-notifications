@@ -47,6 +47,7 @@
     "expect.js": "^0.3.1",
     "fakeredis": "^0.3.0",
     "sinon": "^1.15.4",
-    "supertest": "^0.15.0"
+    "supertest": "^0.15.0",
+    "testdouble": "^3.2.6"
   }
 }

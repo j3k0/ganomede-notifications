@@ -1,3 +1,4 @@
+td = require 'testdouble'
 fakeredis = require 'fakeredis'
 expect = require 'expect.js'
 vasync = require 'vasync'
@@ -13,8 +14,7 @@ describe 'Queue', () ->
 
   notification1 = samples.notification()
   notification2 = samples.notification({}, 'reciever-with-no-tokens')
-
-  before (done) ->
+  resetRedis = (done) ->
     vasync.pipeline
       funcs: [
         (_, cb) -> redis.flushdb(cb)
@@ -22,9 +22,10 @@ describe 'Queue', () ->
       ]
     , done
 
-
   describe '#add()', () ->
+    before(resetRedis)
     queue = new Queue(redis, tokenStorage)
+    afterEach () -> td.reset()
 
     it 'adds push notification to the redis list', (done) ->
       queue.add notification1, (err, newLength) ->
@@ -47,8 +48,24 @@ describe 'Queue', () ->
 
           done()
 
+    it 'notifications are run through translator before adding', (done) ->
+      notification = samples.notification()
+
+      # Replace translator so we know it is called correctly.
+      td.replace(queue.translator, 'process', td.function(['#process()']))
+      td.when(queue.translator.process(notification, td.callback))
+        .thenCallback(null, {})
+
+      queue.add(notification, done)
+
   describe '#get()', () ->
+    before(resetRedis)
+
+    # reset
+    # add 2 messages
     queue = new Queue(redis, tokenStorage)
+    before (cb) -> queue.add(notification1, cb)
+    before (cb) -> queue.add(notification2, cb)
 
     it 'returns task with notification and push token
         when there are messages in the list',
