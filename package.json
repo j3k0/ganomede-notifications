@@ -44,6 +44,7 @@
   },
   "devDependencies": {
     "async": "^2.1.2",
+    "deep-freeze-strict": "^1.1.1",
     "expect.js": "^0.3.1",
     "fakeredis": "^0.3.0",
     "sinon": "^1.15.4",
