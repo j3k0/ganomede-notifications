@@ -3,7 +3,7 @@ deepFreeze = require 'deep-freeze-strict'
 PushTranslator = require '../../src/push-api/push-translator'
 {PushObject, Translatable} = PushTranslator
 
-describe.only 'PushTranslator', () ->
+describe 'PushTranslator', () ->
   pushData = deepFreeze({
     title: ["new_message", "bob", "sent you a message."],
     titleArgsTypes: ["directory:name", "string"],

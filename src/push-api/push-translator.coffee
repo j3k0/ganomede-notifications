@@ -22,6 +22,9 @@ class PushTranslator
 
   # callback(null, translated)
   # error is always null!
+  #
+  # TODO
+  # probably accep only push prop and not whole notification!
   process: (notification, callback) ->
     push = new PushTranslator.PushObject(notification.push)
 
@@ -29,7 +32,14 @@ class PushTranslator
       # TODO
       # DO NOT FAIL OKAY PLEASE (assert for now)
       assert.strictEqual(err, null)
-      callback(null, push.translatedUsing(translations))
+
+      notificationWithTranslatedPush = Object.assign(
+        {},
+        notification,
+        {push: push.translatedUsing(translations)}
+      )
+
+      callback(null, notificationWithTranslatedPush)
 
   translate: (translatables, callback) ->
     jobs = lodash.groupBy translatables, (translatable) ->

@@ -12,8 +12,12 @@ describe 'Queue', () ->
   redis = fakeredis.createClient(__filename)
   tokenStorage = new TokenStorage(redis)
 
-  notification1 = samples.notification()
-  notification2 = samples.notification({}, 'reciever-with-no-tokens')
+  notification1 = samples.notification(samples.wellFormedPush())
+  notification2 = samples.notification(
+    samples.wellFormedPush(),
+    'reciever-with-no-tokens'
+  )
+
   resetRedis = (done) ->
     vasync.pipeline
       funcs: [

@@ -18,3 +18,12 @@ exports.notification = (push={}, reciever='alice') ->
 
   ret.push.app = ret.push.app || ret.from
   return ret
+
+exports.wellFormedPush = () ->
+  return {
+    "app": "substract-game/v1",
+    "title": [ "localization-key", "args..." ],
+    "message": [ "localization-key", "args..." ],
+    "titleArgsTypes": [ "types..." ],
+    "messageArgsTypes": [ "types..." ]
+  }

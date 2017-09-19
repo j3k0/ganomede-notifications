@@ -6,7 +6,7 @@
 # Translators must never fail (log error-d items and skip them).
 # Translators must always be async (setImmediate stuff if needed).
 #
-# argTypes are of format "#{translatorId}:#{specific-info}". Exported object
+# arg types are of format "#{translatorId}:#{specific-info}". Exported object
 # is keyed with TranslatorIDs and push-translator will use it to look up
 # translators. For example, all the `directory:name` entries will
 # be grouped into single array and passed to a function exported under
