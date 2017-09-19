@@ -1,7 +1,7 @@
 expect = require 'expect.js'
 deepFreeze = require 'deep-freeze-strict'
 PushTranslator = require '../../src/push-api/push-translator'
-{PushObject, Translatable, Translation} = PushTranslator
+{PushObject, Translatable} = PushTranslator
 
 describe.only 'PushTranslator', () ->
   pushData = deepFreeze({
@@ -17,7 +17,8 @@ describe.only 'PushTranslator', () ->
   ].map (obj) -> new Translatable(obj))
 
   translations = deepFreeze(expectedTranslatables.map (translatable) ->
-    return new Translation(translatable, "tr(#{translatable.value})"))
+    return translatable.translation("tr(#{translatable.value})")
+  )
 
   describe '#process()', () ->
     it 'tests pending (is okay, this one is just plumbing anyways)'

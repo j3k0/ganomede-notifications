@@ -82,6 +82,10 @@ class PushTranslator
 
   class @Translatable
     constructor: ({@field, @index, @value, @type}) ->
+    translation: (translatedValue) -> new PushTranslator.Translation(
+      this,
+      translatedValue
+    )
 
   class @Translation
     constructor: (@translatable, @value) ->
