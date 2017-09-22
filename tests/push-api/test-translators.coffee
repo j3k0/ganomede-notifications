@@ -60,6 +60,8 @@ describe 'translators', () ->
           new Translation(t1, 'Magnificent Bob')
           new Translation(t2, 'bob@magnificent-creatures.mail'),
         ])
+        expect(td.explain(translatorsDeps.directoryClient.byId))
+          .to.have.property('callCount', 1)
         done()
 
     it 'translates multiple aliases from multiple users', (done) ->
@@ -73,20 +75,43 @@ describe 'translators', () ->
       t2 = new Translatable({
         field: 'something',
         index: 1,
+        value: 'alice',
+        type: 'ganomede:name'
+      })
+
+      t3 = new Translatable({
+        field: 'something',
+        index: 2,
         value: 'bob',
         type: 'ganomede:name'
+      })
+
+      t4 = new Translatable({
+        field: 'something',
+        index: 3,
+        value: 'bob',
+        type: 'ganomede:email'
       })
 
       td.when(translatorsDeps.directoryClient.byId({id: 'alice'}, td.callback))
         .thenCallback(null, {aliases: {name: 'Alice of the Wonderland'}})
 
       td.when(translatorsDeps.directoryClient.byId({id: 'bob'}, td.callback))
-        .thenCallback(null, {aliases: {name: 'Magnificent Bob'}})
+        .thenCallback(null, {
+          aliases: {
+            name: 'Magnificent Bob',
+            email: 'bob@magnificent-creatures.mail'
+          }
+        })
 
-      translators.directory [t1, t2], (err, translations) ->
+      translators.directory [t1, t2, t3, t4], (err, translations) ->
         expect(err).to.be(null)
         expect(translations).to.eql([
           new Translation(t1, 'Alice of the Wonderland')
-          new Translation(t2, 'Magnificent Bob'),
+          new Translation(t2, 'Alice of the Wonderland'),
+          new Translation(t3, 'Magnificent Bob'),
+          new Translation(t4, 'bob@magnificent-creatures.mail'),
         ])
+        expect(td.explain(translatorsDeps.directoryClient.byId))
+          .to.have.property('callCount', 2)
         done()

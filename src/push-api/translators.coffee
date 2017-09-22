@@ -22,6 +22,7 @@
 
 util = require 'util'
 async = require 'async'
+lodash = require 'lodash'
 log = require '../log'
 
 # TODO
@@ -33,39 +34,42 @@ ignoreError = (fn) -> (args..., callback) ->
   cb = (err, results...) -> callback.call(this, null, results...)
   fn.call(this, args..., cb)
 
-lookupSingleAlias = ignoreError (userId, alias, callback) ->
+fetchProfile = ignoreError (userId, callback) ->
   deps.directoryClient.byId {id: userId}, (err, profile) ->
     if (err)
-      log.error('Failed to lookup alias for user', {userId, alias}, err)
+      log.error('Failed to user profile', {userId}, err)
       return callback(err)
 
-    hasAlias = profile?.aliases?[alias]?
-    if (!hasAlias)
-      error = new Error(util.format('User missing alias %j', {userId, alias}))
-      log.info(error)
-      return callback(error)
+    callback(null, profile)
 
-    callback(null, profile.aliases[alias])
-
-directoryIter = (translatable, callback) ->
-  userId = translatable.value
-  alias = translatable.type.slice(translatable.type.indexOf(':') + 1)
-  lookupSingleAlias userId, alias, (err, aliasValue) ->
+directoryIter = (translatables, userId, callback) ->
+  fetchProfile userId, (err, profile) ->
     if err
       return callback(err)
 
-    if aliasValue
-      return callback(null, translatable.translation(aliasValue))
+    translations = translatables
+      .map (translatable) ->
+        alias = translatable.type.slice(translatable.type.indexOf(':') + 1)
+        hasAlias = profile?.aliases?[alias]?
 
-    callback(null, undefined)
+        if !hasAlias
+          log.info('User missing alias %j', {userId, alias})
+          return null
 
-directoryFinalizer = (callback) -> (err, translations) ->
-  successes = translations.filter (t) -> !!t
+        return translatable.translation(profile.aliases[alias])
+
+    callback(null, translations)
+
+directoryFinalizer = (callback) -> (err, result) ->
+  successes = lodash
+    .flatten(Object.values(result))
+    .filter (t) -> !!t
+
   callback(null, successes)
 
 directory = (translatables, callback) ->
-  async.map(
-    translatables,
+  async.mapValues(
+    lodash.groupBy(translatables, 'value'), # group by userId
     directoryIter,
     directoryFinalizer(callback)
   )
