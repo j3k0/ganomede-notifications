@@ -5,7 +5,6 @@ log = require '../log'
 translators = require './translators'
 
 PUSH_FIELDS_TO_CHECK = ['title', 'message']
-TRANSLATABLE_TYPES = ['directory:name']
 
 defaultTranslate = (translatables, cb) ->
   setImmediate(cb, null, [])
@@ -69,7 +68,7 @@ class PushTranslator
         for value, index in values
           type = types[index]
 
-          if (TRANSLATABLE_TYPES.includes(type))
+          if type.includes(':')
             translatables.push(new PushTranslator.Translatable({
               field,
               index: index + 1, # because values are slice(1)

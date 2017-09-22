@@ -37,7 +37,23 @@ Notifications containing `.push` object will also be sent as push notifications 
 
 `.push.title` and `.push.message` must be String arrays of at least 1 length containing localization key at `[0]` followed by any number of localization arguments. If either title, or message, or both are not present, notificaiton alert will default to `config.pushApi.apn.defaultAlert` string.
 
-`.push.messageArgsTypes` and `.push.titleArgsTypes` define the types of localization arguments. Use specific types here so service will perform lookups and expand your arguments into "better-looking" strings. For example:
+`.push.messageArgsTypes` and `.push.titleArgsTypes` define the types of localization arguments. Use specific types here so service will perform lookups and expand your arguments into "better-looking" strings.
+
+**Note:** arg type considered special if it is formated as `<type>:<subtype>` (contains `:` char). Arg type is passed to expansion function:
+
+  - `type` part will be used to lookup expansion function (name of export from [`translators.coffee`](/src/push-api/translators.coffee));
+  - `subtype` is used by you to further specify how to expand a string (but only used by your expansion func);
+  - all of info is grouped inside `PushTranslator.Translatable` instance:
+    ``` js
+    Translatable {
+      field: 'title',
+      type: 'directory:email',  // arg type
+      index: 3,  // index in the title array
+      value: 'alice'  // original string at that index
+    }
+      ```
+
+ For example:
 
 ``` js
 // Based in userIds, this…
