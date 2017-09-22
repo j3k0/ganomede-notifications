@@ -37,7 +37,29 @@ Notifications containing `.push` object will also be sent as push notifications 
 
 `.push.title` and `.push.message` must be String arrays of at least 1 length containing localization key at `[0]` followed by any number of localization arguments. If either title, or message, or both are not present, notificaiton alert will default to `config.pushApi.apn.defaultAlert` string.
 
-`.push.messageArgsTypes` and `.push.titleArgsTypes` defined the types of localization arguments. In case the type is `username` and notification module is linked with `ganomede-directory`, then the corresponding arguments will be translated to their 'name' alias (see [https://github.com/j3k0/ganomede-directory/](ganomede-directory) for more details).
+`.push.messageArgsTypes` and `.push.titleArgsTypes` define the types of localization arguments. Use specific types here so service will perform lookups and expand your arguments into "better-looking" strings. For example:
+
+``` js
+// Based in userIds, this…
+
+{ "title": [ "invite-title", "Invitation mailed to ", "alice" ],
+  "titleArgsTypes": [ "string", "directory:email" ],
+
+  "message": [ "invite-message", "bob", " invited you somewhere nice. Details are in your email, ", "alice", "." ],
+  "messageArgsTypes": [ "directory:username", "directory:username" ]
+}
+
+// …will get expanded to this:
+
+{ "title": [ "invite-title", "Invitation mailed to ", "alice@wonderland.com" ],
+  "titleArgsTypes": [ "string", "directory:email" ],
+
+  "message": [ "invite-message", "Magnificent Bob", " invited you somewhere nice. Details are in your email, ", "Alice of the Wonderland", "." ],
+  "messageArgsTypes": [ "directory:username", "directory:username" ]
+}
+```
+
+For now, only aliases are expanded from `userId`s via [ganomede-directory](https://github.com/j3k0/ganomede-directory). See [`translators.coffee`](/src/push-api/translators.coffee) for details.
 
 Relations
 ---------
