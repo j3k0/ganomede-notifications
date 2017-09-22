@@ -115,3 +115,48 @@ describe 'translators', () ->
         expect(td.explain(translatorsDeps.directoryClient.byId))
           .to.have.property('callCount', 2)
         done()
+
+    it 'missing aliases are skipped', (done) ->
+      t1 = new Translatable({
+        field: 'something',
+        index: 2,
+        value: 'bob',
+        type: 'ganomede:name'
+      })
+
+      t2 = new Translatable({
+        field: 'something',
+        index: 3,
+        value: 'bob',
+        type: 'ganomede:email'
+      })
+
+      td.when(translatorsDeps.directoryClient.byId({id: 'bob'}, td.callback))
+        .thenCallback(null, {aliases: {}})
+
+      translators.directory [t1, t2], (err, translations) ->
+        expect(err).to.be(null)
+        expect(translations).to.eql([])
+        done()
+
+    it 'does not fail on net errors (skips translations)', (done) ->
+      t1 = new Translatable({
+        field: 'something',
+        index: 2,
+        value: 'miss',
+        type: 'ganomede:name'
+      })
+
+      td.when(translatorsDeps.directoryClient.byId({id: 'miss'}, td.callback))
+        .thenCallback(
+          new Error("Restify's 404"),
+          {
+            code: 'UserNotFoundError',
+            message: 'User not found {"userId":"elmigrantoasdasd"}'
+          }
+        )
+
+      translators.directory [t1], (err, translations) ->
+        expect(err).to.be(null)
+        expect(translations).to.eql([])
+        done()
