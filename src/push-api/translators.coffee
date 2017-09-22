@@ -74,6 +74,10 @@ directory = (translatables, callback) ->
     directoryFinalizer(callback)
   )
 
-module.exports = {
-  directory
-}
+#
+# EXPORTS
+#
+
+# If directory is configured, use `directory` translator.
+if !!process.env.DIRECTORY_PORT_8000_TCP_ADDR
+  exports.directory = directory

@@ -1,16 +1,36 @@
+assert = require 'assert'
 td = require 'testdouble'
 expect = require 'expect.js'
 {Translatable, Translation} = require '../../src/push-api/push-translator'
+
+envVarBackup =
+  name: 'DIRECTORY_PORT_8000_TCP_ADDR'
+  original:
+    present: process.env.hasOwnProperty('DIRECTORY_PORT_8000_TCP_ADDR')
+    value: process.env.DIRECTORY_PORT_8000_TCP_ADDR
+
+  fake: (val = 'localhost') -> process.env[this.name] = val
+  reset: () ->
+    if this.original.present
+      process.env[this.name] = this.original.value
+    else
+      assert(
+        delete process.env[this.name],
+        "Failed to reset env var `#{this.name}`"
+      )
 
 describe 'translators', () ->
   translators = null
   translatorsDeps = null
 
   beforeEach () ->
+    envVarBackup.fake()
     translatorsDeps = td.replace '../../src/push-api/translators-deps'
     translators = require '../../src/push-api/translators'
 
-  afterEach () -> td.reset()
+  afterEach () ->
+    envVarBackup.reset()
+    td.reset()
 
   describe 'directory:*', () ->
     it 'translates single alias', (done) ->
