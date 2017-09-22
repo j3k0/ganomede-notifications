@@ -46,7 +46,7 @@ Notifications containing `.push` object will also be sent as push notifications 
   "titleArgsTypes": [ "string", "directory:email" ],
 
   "message": [ "invite-message", "bob", " invited you somewhere nice. Details are in your email, ", "alice", "." ],
-  "messageArgsTypes": [ "directory:username", "directory:username" ]
+  "messageArgsTypes": [ "directory:username", "string", "directory:username", "string" ]
 }
 
 // …will get expanded to this:
@@ -55,7 +55,7 @@ Notifications containing `.push` object will also be sent as push notifications 
   "titleArgsTypes": [ "string", "directory:email" ],
 
   "message": [ "invite-message", "Magnificent Bob", " invited you somewhere nice. Details are in your email, ", "Alice of the Wonderland", "." ],
-  "messageArgsTypes": [ "directory:username", "directory:username" ]
+  "messageArgsTypes": [ "directory:username", "string", "directory:username", "string" ]
 }
 ```
 
