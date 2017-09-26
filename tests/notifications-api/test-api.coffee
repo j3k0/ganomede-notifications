@@ -103,11 +103,11 @@ describe "Notifications API", () ->
 
           done()
 
-    it 'replies with HTTP 400 on missing API secret', (done) ->
+    it 'replies with HTTP 401 on missing API secret', (done) ->
       go()
         .post endpoint('/messages')
         .send samples.notification()
-        .expect 400, done
+        .expect 401, done
 
     it 'replies with HTTP 401 on invalid API secret', (done) ->
       go()

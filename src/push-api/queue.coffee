@@ -4,6 +4,7 @@ vasync = require 'vasync'
 Task = require './task'
 config = require '../../config'
 log = require '../log'
+PushTranslator = require './push-translator'
 
 class Queue
   constructor: (@redis, @tokenStorage) ->
@@ -13,18 +14,30 @@ class Queue
     unless @tokenStorage
       throw new Error('TokenStorageRequired')
 
+    @translator = new PushTranslator()
+
   # Add notification to the queue.
   # callback(err)
   add: (notification, callback=->) ->
-    json = JSON.stringify(notification)
-    @redis.lpush config.pushApi.notificationsPrefix, json, (err, newLength) ->
+    @translator.process notification, (err, translated) =>
       if (err)
-        log.error 'Failed to add notification to the queue',
-          err: err
-          notification: notification
-          queue: config.pushApi.notificationsPrefix
+        log.error 'Failed to translate notification', {err, notification}
+        return callback(err)
 
-      callback(err, newLength)
+      # Let's JSON translated notification, but maybe it is worth
+      # to serialize original one in case of error. However, I do not plan
+      # to ever error in translator for now.
+      json = JSON.stringify(translated)
+
+      @redis.lpush config.pushApi.notificationsPrefix, json, (err, newLength) ->
+        if (err)
+          log.error 'Failed to add translated notification to the queue',
+            err: err
+            notification: notification
+            translated: translated
+            queue: config.pushApi.notificationsPrefix
+
+        callback(err, newLength)
 
   # Look into redis list for new push notifications to be send.
   # If there are notification, retrieve push tokens for them.

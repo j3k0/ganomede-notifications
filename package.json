@@ -1,6 +1,6 @@
 {
   "name": "notifications",
-  "version": "1.8.3",
+  "version": "1.9.0",
   "api": "notifications/v1",
   "description": "notifications micro service",
   "private": true,
@@ -13,6 +13,7 @@
   "license": "Private",
   "dependencies": {
     "apn": "^1.7.4",
+    "async": "^2.5.0",
     "authdb": "^0.3.0",
     "blanket": "^1.1.6",
     "bunyan": "^1.2.3",
@@ -43,10 +44,11 @@
     }
   },
   "devDependencies": {
-    "async": "^2.1.2",
+    "deep-freeze-strict": "^1.1.1",
     "expect.js": "^0.3.1",
     "fakeredis": "^0.3.0",
     "sinon": "^1.15.4",
-    "supertest": "^0.15.0"
+    "supertest": "^0.15.0",
+    "testdouble": "^3.2.6"
   }
 }

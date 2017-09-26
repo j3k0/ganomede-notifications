@@ -29,11 +29,53 @@ Notifications containing `.push` object will also be sent as push notifications 
 { "app": "triominos/v1"  // String, required  Which app to notify
 
   "title": [ "localization-key", "args..." ],   // String[], optional
-  "message": [ "localization-key", "args..." ]  // String[], optional
+  "message": [ "localization-key", "args..." ], // String[], optional
+  "titleArgsTypes": [ ],                        // String[], optional
+  "messageArgsTypes": [ "username..." ]         // String[], optional
 }
 ```
 
 `.push.title` and `.push.message` must be String arrays of at least 1 length containing localization key at `[0]` followed by any number of localization arguments. If either title, or message, or both are not present, notificaiton alert will default to `config.pushApi.apn.defaultAlert` string.
+
+`.push.messageArgsTypes` and `.push.titleArgsTypes` define the types of localization arguments. Use specific types here so service will perform lookups and expand your arguments into "better-looking" strings.
+
+**Note:** arg type considered special if it is formated as `<type>:<subtype>` (contains `:` char). Arg type is passed to expansion function:
+
+  - `type` part will be used to lookup expansion function (name of export from [`translators.coffee`](/src/push-api/translators.coffee));
+  - `subtype` is used by you to further specify how to expand a string (but only used by your expansion func);
+  - all of info is grouped inside `PushTranslator.Translatable` instance:
+    ``` js
+    Translatable {
+      field: 'title',
+      type: 'directory:email',  // arg type
+      index: 3,  // index in the title array
+      value: 'alice'  // original string at that index
+    }
+      ```
+
+ For example:
+
+``` js
+// Based in userIds, this…
+
+{ "title": [ "invite-title", "Invitation mailed to ", "alice" ],
+  "titleArgsTypes": [ "string", "directory:email" ],
+
+  "message": [ "invite-message", "bob", " invited you somewhere nice. Details are in your email, ", "alice", "." ],
+  "messageArgsTypes": [ "directory:username", "string", "directory:username", "string" ]
+}
+
+// …will get expanded to this:
+
+{ "title": [ "invite-title", "Invitation mailed to ", "alice@wonderland.com" ],
+  "titleArgsTypes": [ "string", "directory:email" ],
+
+  "message": [ "invite-message", "Magnificent Bob", " invited you somewhere nice. Details are in your email, ", "Alice of the Wonderland", "." ],
+  "messageArgsTypes": [ "directory:username", "string", "directory:username", "string" ]
+}
+```
+
+For now, only aliases are expanded from `userId`s via [ganomede-directory](https://github.com/j3k0/ganomede-directory). See [`translators.coffee`](/src/push-api/translators.coffee) for details.
 
 Relations
 ---------
@@ -64,6 +106,7 @@ Variables available for service configuration (see [config.js](/config.js)):
    - `REDIS_ONLINELIST_PORT_6379_TCP_ADDR` — Redis online list host
    - `REDIS_ONLINELIST_PORT_6379_TCP_PORT` — Redis online list port
  * Push Notifications API
+   - `DIRECTORY_PORT_8000_TCP_[ADDR|PORT|PROTOCOL]` - Link to ganomede-directory (optional)
    - `REDIS_PUSHAPI_PORT_6379_TCP_ADDR` — Redis host for storing push tokens
    - `REDIS_PUSHAPI_PORT_6379_TCP_PORT` — Redis port for storing push tokens
    - `APN_CERT_FILEPATH` — Path to .pem file with APN certificate
