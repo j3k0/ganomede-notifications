@@ -1,4 +1,5 @@
 expect = require 'expect.js'
+lodash = require 'lodash'
 deepFreeze = require 'deep-freeze-strict'
 PushTranslator = require '../../src/push-api/push-translator'
 {PushObject, Translatable} = PushTranslator
@@ -31,6 +32,10 @@ describe 'PushTranslator', () ->
       it 'returns stuff to translate with proper indexes', () ->
         push = new PushObject(pushData)
         expect(push.translatables()).to.eql(expectedTranslatables)
+
+      it 'works when *ArgsTypes is missing for some fields', () ->
+        push = new PushObject(lodash.omit(pushData, 'messageArgsTypes'))
+        expect(push.translatables()).to.eql(expectedTranslatables.slice(0, 1))
 
     describe '#translatedUsing()', () ->
       it 'accepts a bunch of `Translation`s and returns translated push', () ->
