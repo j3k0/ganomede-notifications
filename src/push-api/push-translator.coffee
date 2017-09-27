@@ -65,6 +65,10 @@ class PushTranslator
         types = @push["#{field}ArgsTypes"]
         translatables = []
 
+        # Some *ArgsTypes might be missing.
+        unless Array.isArray(types)
+          return
+
         for value, index in values
           type = types[index]
 
