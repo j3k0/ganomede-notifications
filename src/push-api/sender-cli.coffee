@@ -26,12 +26,12 @@ class Producer extends stream.Readable
   _getTask: (callback) ->
     @queue.get (err, task) =>
       if (err)
-        log.error('Failed to retrieve task', err)
+        log.error({err: err}, 'Failed to retrieve task')
         return callback(err, null)
 
       # If no tokens, skip notification, and _getTask() again for a new item.
       if (task && task.tokens.length == 0)
-        log.warn('No tokens for notification, skipping', task.notification)
+        log.info('[skip] No tokens for user: ' + task.notification.to)
         return process.nextTick(@_getTask.bind(@, callback))
 
       if task
@@ -73,7 +73,7 @@ class Consumer extends stream.Writable
     #   debug("#{senderType} succeeded", info)
 
     @sender.on Sender.events.FAILURE, (senderType, err, notifId, token) ->
-      log.error("#{senderType} failed to send #{notifId} for #{token}", err)
+      log.error({err: err}, "#{senderType} failed to send #{notifId} for #{token}")
 
   _write: (task, encoding, processed) ->
     @state.queued += task.tokens.length
@@ -138,7 +138,7 @@ main = (testing) ->
   # Start callbacking
   start = (err) ->
     if (err)
-      log.error('start() called with error', err)
+      log.error({err: err}, 'start() called with error')
       return process.exit(1)
 
     producer.pipe(consumer)
