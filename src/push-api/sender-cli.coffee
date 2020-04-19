@@ -73,7 +73,8 @@ class Consumer extends stream.Writable
     #   debug("#{senderType} succeeded", info)
 
     @sender.on Sender.events.FAILURE, (senderType, err, notifId, token) ->
-      log.error({err: err}, "#{senderType} failed to send #{notifId} for #{token}")
+      log.error({err: err},
+        "#{senderType} failed to send #{notifId} for #{token}")
 
   _write: (task, encoding, processed) ->
     @state.queued += task.tokens.length

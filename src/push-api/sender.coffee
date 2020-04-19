@@ -16,7 +16,10 @@ class ApnSender
     @log = log.child apn:true
 
   send: (notification, tokens) ->
-    @log.info {id: notification.payload.id, to: notification.payload.to}, "sending APN"
+    @log.info {
+      id: notification.payload.id,
+      to: notification.payload.to
+    }, "sending APN"
     devices = tokens.map (token) -> new apn.Device(token.data())
     @connection.pushNotification(notification, devices)
 
