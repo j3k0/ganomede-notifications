@@ -12,7 +12,7 @@
   "author": "Jean-Christophe Hoelt <hoelt@fovea.cc>",
   "license": "Private",
   "dependencies": {
-    "apn": "^1.7.4",
+    "apn": "^1.7.8",
     "authdb": "^0.3.0",
     "blanket": "^1.1.6",
     "bunyan": "^1.2.3",
@@ -30,7 +30,7 @@
     "node-gcm": "^1.0.2",
     "node-statsd": "^0.1.1",
     "redis": "^2.6.2",
-    "restify": "^4.3.1",
+    "restify": "^4.3.4",
     "vasync": "^1.6.2"
   },
   "config": {
