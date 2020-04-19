@@ -39,7 +39,9 @@ class Queue
       callback(null, JSON.parse(notificationJson))
 
   _task: (notification, callback) ->
-    unless notification
+    now = +new Date()
+    ten_minutes_ago = now - 600 * 1000
+    if (not notification) or (notification.timestamp and notification.timestamp < ten_minutes_ago)
       return callback(null, null)
 
     @tokenStorage.get notification.to, notification.push.app, (err, tokens) ->
