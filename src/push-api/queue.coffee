@@ -19,10 +19,11 @@ class Queue
     json = JSON.stringify(notification)
     @redis.lpush config.pushApi.notificationsPrefix, json, (err, newLength) ->
       if (err)
-        log.error 'Failed to add notification to the queue',
+        log.error {
           err: err
           notification: notification
           queue: config.pushApi.notificationsPrefix
+        }, 'Failed to add notification to the queue',
 
       callback(err, newLength)
 
@@ -32,7 +33,7 @@ class Queue
   _rpop: (callback) ->
     @redis.rpop config.pushApi.notificationsPrefix, (err, notificationJson) ->
       if err
-        log.error 'Failed to .rpop push notification', err
+        log.error {err}, 'Failed to .rpop push notification'
         return callback(err)
 
       callback(null, JSON.parse(notificationJson))
@@ -43,9 +44,10 @@ class Queue
 
     @tokenStorage.get notification.to, notification.push.app, (err, tokens) ->
       if err
-        log.error 'Failed to get tokens for notification',
+        log.error {
           err: err
           notification: notification
+        }, 'Failed to get tokens for notification'
         return callback(err)
 
       if notification.secret

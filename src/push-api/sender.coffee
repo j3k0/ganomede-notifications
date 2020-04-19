@@ -16,7 +16,7 @@ class ApnSender
     @log = log.child apn:true
 
   send: (notification, tokens) ->
-    @log.info "sending APN #{notification.payload.id}"
+    @log.info {id: notification.payload.id, to: notification.payload.to}, "sending APN"
     devices = tokens.map (token) -> new apn.Device(token.data())
     @connection.pushNotification(notification, devices)
 
@@ -41,7 +41,10 @@ class GcmSender extends events.EventEmitter
           @emit(Sender.events.SUCCESS, notifId, token)
 
   send: (gcmMessage, tokens) ->
-    @log.info "sending GCM #{gcmMessage.params.data.notificationId}"
+    @log.info {
+      id: gcmMessage.params.data.notificationId
+      to: gcmMessage.params.data.notificationTo
+    }, "sending GCM"
     registrationIds = tokens.map (token) -> token.data()
     @_send(gcmMessage, registrationIds)
 

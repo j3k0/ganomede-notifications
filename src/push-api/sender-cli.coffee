@@ -31,7 +31,7 @@ class Producer extends stream.Readable
 
       # If no tokens, skip notification, and _getTask() again for a new item.
       if (task && task.tokens.length == 0)
-        log.info('[skip] No tokens for user: ' + task.notification.to)
+        log.info({to: task.notification.to}, '[skip] No tokens for user')
         return process.nextTick(@_getTask.bind(@, callback))
 
       if task

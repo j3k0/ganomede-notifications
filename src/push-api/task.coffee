@@ -64,6 +64,7 @@ Task.converters[Token.GCM] = (notification) ->
   return new gcm.Message({
     data:
       notificationId: notification.id # for easier debug prints
+      notificationTo: notification.to # for easier debug prints
       json: JSON.stringify(notification)
       title_loc_key: androidKeyFormat(headString push.title)
       title_loc_args: headString push.title.slice(1)
