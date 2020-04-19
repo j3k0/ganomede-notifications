@@ -41,7 +41,7 @@ class Queue
   _task: (notification, callback) ->
     now = +new Date()
     ten_minutes_ago = now - 600 * 1000
-    tooOld = n -> n.timestamp and n.timestamp < ten_minutes_ago
+    tooOld = (n) -> n.timestamp and n.timestamp < ten_minutes_ago
     if (not notification) or tooOld(notification)
       return callback(null, null)
 
