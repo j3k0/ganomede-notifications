@@ -111,11 +111,8 @@ class Queue
       if notification.secret
         delete notification.secret
 
-      # only send gcm push to test user for now
       if notification.to == 'kago042'
         log.info {tokens}, 'Tokens for test user'
-      else
-        tokens = tokens.filter((t) -> t.type != 'gcm')
 
       if tokens.length > 0
         translate notification, (translated) ->
