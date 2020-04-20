@@ -4,6 +4,9 @@ vasync = require 'vasync'
 Task = require './task'
 config = require '../../config'
 log = require '../log'
+Translator = require './translator'
+
+translator = new Translator()
 
 class Queue
   constructor: (@redis, @tokenStorage) ->
@@ -112,8 +115,27 @@ class Queue
         log.info {tokens}, 'Tokens for test user'
       else
         tokens = tokens.filter((t) -> t.type != 'gcm')
-      callback(null, new Task(notification, tokens))
 
+      if tokens.length > 0
+        translator.translate(
+          notification.push.title,
+          notification.push.titleArgsTypes,
+          (title) ->
+            translator.translate(
+              notification.push.message,
+              notification.push.messageArgsTypes,
+              (message) ->
+                if title and message
+                  notification.translated =
+                    title: title
+                    message: message
+                  callback(null, new Task(notification, tokens))
+                else
+                  callback(null, new Task(notification, []))
+            )
+        )
+      else
+        callback(null, new Task(notification, []))
   get: (callback) ->
     vasync.waterfall [
       @_rpop.bind(@)

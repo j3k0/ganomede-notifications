@@ -70,29 +70,30 @@ Task.converters[Token.GCM] = (notification) ->
       # title_loc_args: headString push.title.slice(1)
       # body_loc_key: androidKeyFormat(headString push.message)
       # body_loc_args: headString push.message.slice(1)
-    notification: Task.converters[Token.GCM].notification(notification.push)
+    notification: Task.converters[Token.GCM].notification(
+      notification.push, notification.translated)
   })
 
-Task.converters[Token.GCM].notification = (push) ->
-  unless Array.isArray(push.title) && Array.isArray(push.message)
-    log.warn {push: push}, 'Not sure what gcmNote.notification should be'
-    return {
-      tag: push.app
-      icon: config.pushApi.gcm.icon
-      title: config.pushApi.gcm.defaultTitle
-    }
+Task.converters[Token.GCM].notification = (push, translated) ->
+  # unless Array.isArray(push.title) && Array.isArray(push.message)
+  #   log.warn {push: push}, 'Not sure what gcmNote.notification should be'
+  #   return {
+  #     tag: push.app
+  #     icon: config.pushApi.gcm.icon
+  #     title: config.pushApi.gcm.defaultTitle
+  #   }
 
   return {
-    tag: push.app
+    # tag: push.app
     icon: config.pushApi.gcm.icon
-    title: push.title[0]
-    message: push.title[0]
-    title_loc_key: androidKeyFormat(push.title[0])
-    title_loc_args: push.title.slice(1)
-    body_loc_key: androidKeyFormat(push.message[0])
-    body_loc_args: push.message.slice(1)
-    priority: 'high'
-    contentAvailable: true
+    title: translated.title
+    body: translated.message
+    # title_loc_key: androidKeyFormat(push.title[0])
+    # title_loc_args: push.title.slice(1)
+    # body_loc_key: androidKeyFormat(push.message[0])
+    # body_loc_args: push.message.slice(1)
+    # priority: 'high'
+    # contentAvailable: true
   }
 
 headString = (a) -> if (a?.length) then a[0] else ''
