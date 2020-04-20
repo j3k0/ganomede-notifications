@@ -86,6 +86,9 @@ class Queue
       }, '[skip] notification is too old'
       return callback(null, new Task(notification, []))
 
+    if notification.to == 'kago042'
+      log.info {notification}, 'Sending notification to test user'
+
     @tokenStorage.get notification.to, notification.push.app, (err, tokens) ->
       # token data:
       # tokens: [{
@@ -104,6 +107,11 @@ class Queue
       if notification.secret
         delete notification.secret
 
+      # only send gcm push to test user for now
+      if notification.to == 'kago042'
+        log.info {tokens}, 'Tokens for test user'
+      else
+        tokens = tokens.filter((t) -> t.type != 'gcm')
       callback(null, new Task(notification, tokens))
 
   get: (callback) ->
