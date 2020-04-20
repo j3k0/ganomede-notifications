@@ -38,14 +38,62 @@ class Queue
 
       callback(null, JSON.parse(notificationJson))
 
+
+  # Example notification data:
+  #    notification: {
+  #   "from": "chat/v1",
+  #   "to": "kago042",
+  #   "type": "message",
+  #   "data": {
+  #     "roomId": "triominos/v1/kago042/nipe755",
+  #     "from": "nipe755",
+  #     "timestamp": "1587367081025",
+  #     "type": "triominos/v1",
+  #     "message": "yo"
+  #   },
+  #   "push": {
+  #     "titleArgsTypes": [
+  #       "directory:name"
+  #     ],
+  #     "messageArgsTypes": [
+  #       "string",
+  #       "directory:name"
+  #     ],
+  #     "message": [
+  #       "new_message_message",
+  #       "yo",
+  #       "nipe755"
+  #     ],
+  #     "app": "triominos/v1",
+  #     "title": [
+  #       "new_message_title",
+  #       "nipe755"
+  #     ]
+  #   },
+  #   "timestamp": 1587367081519,
+  #   "id": 1132529133
+  # }
   _task: (notification, callback) ->
     now = +new Date()
     ten_minutes_ago = now - 600 * 1000
     tooOld = (n) -> n.timestamp and n.timestamp < ten_minutes_ago
-    if (not notification) or tooOld(notification)
+    if not notification
       return callback(null, null)
+    if tooOld(notification)
+      log.info {
+        id: notification.id
+        timestamp: (new Date(notification.timestamp)).toISOString()
+      }, '[skip] notification is too old'
+      return callback(null, new Task(notification, []))
 
     @tokenStorage.get notification.to, notification.push.app, (err, tokens) ->
+      # token data:
+      # tokens: [{
+      # "key": "notifications:push-tokens:data-v2:kago042:triominos/v1",
+      #   "type": "gcm",
+      #   "device": "defaultDevice",
+      #   "value": "qjeklwqjeklwqje---some-garbage"
+      # }]
       if err
         log.error {
           err: err
