@@ -5,6 +5,7 @@ Task = require './task'
 config = require '../../config'
 log = require '../log'
 Translator = require './translator'
+UserLocale = require './user-locale'
 
 translator = new Translator()
 
@@ -117,23 +118,12 @@ class Queue
         tokens = tokens.filter((t) -> t.type != 'gcm')
 
       if tokens.length > 0
-        translator.translate(
-          notification.push.title,
-          notification.push.titleArgsTypes,
-          (title) ->
-            translator.translate(
-              notification.push.message,
-              notification.push.messageArgsTypes,
-              (message) ->
-                if title and message
-                  notification.translated =
-                    title: title
-                    message: message
-                  callback(null, new Task(notification, tokens))
-                else
-                  callback(null, new Task(notification, []))
-            )
-        )
+        translate notification, (translated) ->
+          if translated.title and translated.message
+            notification.translated = translated
+            callback(null, new Task(notification, tokens))
+          else
+            callback(null, new Task(notification, []))
       else
         callback(null, new Task(notification, []))
   get: (callback) ->
@@ -141,5 +131,26 @@ class Queue
       @_rpop.bind(@)
       @_task.bind(@)
     ], callback
+
+translate = (notification, callback) ->
+  UserLocale.fetch(notification.to, (locale) ->
+    if notification.to == 'kago042'
+      log.info {locale, username: notification.to}, 'Locale fetched'
+    translator.translate(
+      locale,
+      notification.push.title,
+      notification.push.titleArgsTypes,
+      (title) ->
+        translator.translate(
+          locale,
+          notification.push.message,
+          notification.push.messageArgsTypes,
+          (message) ->
+            callback
+              title: title
+              message: message
+        )
+    )
+  )
 
 module.exports = Queue

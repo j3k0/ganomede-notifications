@@ -27,6 +27,7 @@
     "lodash": "^3.10.1",
     "mocha": "^2.0.1",
     "newrelic": "^1.37.2",
+    "node-fetch": "^2.6.0",
     "node-gcm": "^1.0.2",
     "node-statsd": "^0.1.1",
     "redis": "^2.6.2",

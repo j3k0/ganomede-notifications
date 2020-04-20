@@ -41,6 +41,10 @@ module.exports = {
     channel: 'post'
   },
 
+  usermeta: {
+    url: process.env.GANOMEDE_USERMETA_URL || 'http://localhost:8080/usermeta/v1'
+  },
+
   onlineList: {
     redisHost: process.env.REDIS_ONLINELIST_PORT_6379_TCP_ADDR || 'localhost',
     redisPort: +process.env.REDIS_ONLINELIST_PORT_6379_TCP_PORT || 6379,
