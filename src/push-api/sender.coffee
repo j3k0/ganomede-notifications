@@ -34,14 +34,16 @@ class GcmSender extends events.EventEmitter
     @log = log.child({gcm: true})
 
   _send: (message, ids) ->
-    @gcm.sendNoRetry message, ids, (err, result) =>
-      # Unlike APN sender, we need to manually emit N times for each token.
-      notifId = message.params.data.notificationId
-      for token in ids
-        if err
-          @emit(Sender.events.FAILURE, {httpCode: err}, notifId, token)
-        else
-          @emit(Sender.events.SUCCESS, notifId, token)
+    @gcm.sendNoRetry message,
+      {registrationTokens: ids},
+      (err, result) =>
+        # Unlike APN sender, we need to manually emit N times for each token.
+        notifId = message.params.data.notificationId
+        for token in ids
+          if err
+            @emit(Sender.events.FAILURE, {httpCode: err}, notifId, token)
+          else
+            @emit(Sender.events.SUCCESS, notifId, token)
 
   send: (gcmMessage, tokens) ->
     @log.info {

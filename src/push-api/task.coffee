@@ -66,16 +66,16 @@ Task.converters[Token.GCM] = (notification) ->
       notificationId: notification.id # for easier debug prints
       notificationTo: notification.to # for easier debug prints
       json: JSON.stringify(notification)
-      title_loc_key: androidKeyFormat(headString push.title)
-      title_loc_args: headString push.title.slice(1)
-      body_loc_key: androidKeyFormat(headString push.message)
-      body_loc_args: headString push.message.slice(1)
+      # title_loc_key: androidKeyFormat(headString push.title)
+      # title_loc_args: headString push.title.slice(1)
+      # body_loc_key: androidKeyFormat(headString push.message)
+      # body_loc_args: headString push.message.slice(1)
     notification: Task.converters[Token.GCM].notification(notification.push)
   })
 
 Task.converters[Token.GCM].notification = (push) ->
   unless Array.isArray(push.title) && Array.isArray(push.message)
-    log.warn 'Not sure what gcmNote.notification should b', push:push
+    log.warn {push: push}, 'Not sure what gcmNote.notification should be'
     return {
       tag: push.app
       icon: config.pushApi.gcm.icon
