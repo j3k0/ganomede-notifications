@@ -42,7 +42,9 @@ class UserLocale
     fetchUsermetas(
       username,
       (data) ->
-        if data.locale
+        if !data
+          callback('en')
+        else if data.locale
           callback(formatLocale(data.locale))
         else
           callback(localeFromLocation(data.location))
