@@ -50,7 +50,7 @@ while true; do
     # echo ./node_modules/.bin/coffee src/push-api/sender-cli.coffee
     ./node_modules/.bin/coffee src/push-api/sender-cli.coffee &
     PUSH_WORKER_PID="$!"
-    wait -f "$PUSH_WORKER_PID"
+    wait "$PUSH_WORKER_PID"
     PUSH_WORKER_PID=""
     sleep "$WORKER_INTERVAL"
 done
