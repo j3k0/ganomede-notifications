@@ -23,7 +23,7 @@ fi
 
 function monitor() {
     while sleep 10; do
-        QUEUE_SIZE="$(redis-cl -h "$REDIS_PUSHAPI_PORT_6379_TCP_ADDR" -p "$REDIS_PUSHAPI_PORT_6379_TCP_PORT" --raw LLEN notifications:push-notifications)"
+        QUEUE_SIZE="$(redis-cli -h "$REDIS_PUSHAPI_PORT_6379_TCP_ADDR" -p "$REDIS_PUSHAPI_PORT_6379_TCP_PORT" --raw LLEN notifications:push-notifications)"
         # NOTE STATSD_PREFIX ends with a "." (dot character)
         echo "${STATSD_PREFIX}message_queue_length:$QUEUE_SIZE|g" | nc -w 1 -u "$STATSD_HOST" "$STATSD_PORT"
         if [ "$QUEUE_SIZE" -gt "1000" ]; then
