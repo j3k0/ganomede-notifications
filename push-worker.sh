@@ -28,8 +28,8 @@ function monitor() {
         # NOTE: STATSD_PREFIX ends with a "." (dot character)
         echo "${STATSD_PREFIX}message_queue_length:$QUEUE_SIZE|g" | nc -w 1 -u "$STATSD_HOST" "$STATSD_PORT" || true
         if [ ! -z "$QUEUE_SIZE" ]; then
-            if [ "$QUEUE_SIZE" -gt "1000" ] && [ "$QUEUE_SIZE" -gt "$LAST_QUEUE_SIZE" ]; then
-                if [ -z "$PUSH_WORKER_PID" ]; then
+            if [ "$QUEUE_SIZE" -gt "100" ] && [ "$QUEUE_SIZE" -gt "$LAST_QUEUE_SIZE" ]; then
+                if [ ! -z "$PUSH_WORKER_PID" ]; then
                     kill "$PUSH_WORKER_PID" || true
                     PUSH_WORKER_PID=""
                 fi
@@ -50,7 +50,7 @@ while true; do
     # echo ./node_modules/.bin/coffee src/push-api/sender-cli.coffee
     ./node_modules/.bin/coffee src/push-api/sender-cli.coffee &
     PUSH_WORKER_PID="$!"
-    wait
+    wait -f "$PUSH_WORKER_PID"
     PUSH_WORKER_PID=""
     sleep "$WORKER_INTERVAL"
 done
