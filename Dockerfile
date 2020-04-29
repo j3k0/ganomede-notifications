@@ -1,9 +1,14 @@
-# Stick to node:7 until https://github.com/restify/node-restify/issues/1374 is fixed
-# (restify getHeaders infinite call stack)
 FROM node:12-slim
 
 EXPOSE 8000
 MAINTAINER Jean-Christophe Hoelt <hoelt@fovea.cc>
+
+# Install redis-cli and netcat
+# (those are used by push-worker.sh to monitor the queue of messages)
+RUN apt-get update && apt-get install -y \
+    redis-tools \
+    netcat-traditional \
+ && rm -rf /var/lib/apt/lists/*
 
 # Create 'app' user
 RUN useradd app -d /home/app

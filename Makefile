@@ -8,6 +8,7 @@ MOCHA_FLAGS=--bail \
 all: install test
 
 check: install
+	shellcheck -s bash push-worker.sh
 	./node_modules/.bin/eslint --config ./.eslintrc index.js index.fix.js config.js newrelic.js
 	./node_modules/.bin/coffeelint -q src tests
 	grep -R -n -A5 -i TODO src tests
