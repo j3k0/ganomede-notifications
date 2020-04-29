@@ -21,13 +21,20 @@ if [[ -z "$WORKER_INTERVAL" ]]; then
     WORKER_INTERVAL=1
 fi
 
+LAST_QUEUE_SIZE="$(redis-cli -h "$REDIS_PUSHAPI_PORT_6379_TCP_ADDR" -p "$REDIS_PUSHAPI_PORT_6379_TCP_PORT" --raw LLEN notifications:push-notifications || true)"
 function monitor() {
     while sleep 10; do
         QUEUE_SIZE="$(redis-cli -h "$REDIS_PUSHAPI_PORT_6379_TCP_ADDR" -p "$REDIS_PUSHAPI_PORT_6379_TCP_PORT" --raw LLEN notifications:push-notifications || true)"
         # NOTE: STATSD_PREFIX ends with a "." (dot character)
         echo "${STATSD_PREFIX}message_queue_length:$QUEUE_SIZE|g" | nc -w 1 -u "$STATSD_HOST" "$STATSD_PORT" || true
-        if [ ! -z "$QUEUE_SIZE" ] && [ "$QUEUE_SIZE" -gt "1000" ]; then
-            kill "$PUSH_WORKER_PID" || true
+        if [ ! -z "$QUEUE_SIZE" ]; then
+            if [ "$QUEUE_SIZE" -gt "1000" ] && [ "$QUEUE_SIZE" -gt "$LAST_QUEUE_SIZE" ]; then
+                if [ -z "$PUSH_WORKER_PID" ]; then
+                    kill "$PUSH_WORKER_PID" || true
+                    PUSH_WORKER_PID=""
+                fi
+            fi
+            LAST_QUEUE_SIZE="$QUEUE_SIZE"
         fi
     done
 }
@@ -42,7 +49,8 @@ while true; do
     date -u +"[%Y-%m-%dT%H:%M:%SZ]"
     # echo ./node_modules/.bin/coffee src/push-api/sender-cli.coffee
     ./node_modules/.bin/coffee src/push-api/sender-cli.coffee &
-    PUSH_WORKER_PID=$!
+    PUSH_WORKER_PID="$!"
     wait
-    sleep $WORKER_INTERVAL
+    PUSH_WORKER_PID=""
+    sleep "$WORKER_INTERVAL"
 done
