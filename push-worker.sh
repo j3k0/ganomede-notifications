@@ -21,18 +21,38 @@ if [[ -z "$WORKER_INTERVAL" ]]; then
     WORKER_INTERVAL=1
 fi
 
-LAST_QUEUE_SIZE="$(redis-cli -h "$REDIS_PUSHAPI_PORT_6379_TCP_ADDR" -p "$REDIS_PUSHAPI_PORT_6379_TCP_PORT" --raw LLEN notifications:push-notifications || true)"
+PUSH_WORKER_PID=
+function run_worker() {
+    ./node_modules/.bin/coffee src/push-api/sender-cli.coffee &
+    PUSH_WORKER_PID="$!"
+    wait "$PUSH_WORKER_PID"
+    PUSH_WORKER_PID=""
+}
+function stop_worker() {
+    local KILL_WORKER_PID
+    if [ ! -z "$PUSH_WORKER_PID" ]; then
+        KILL_WORKER_PID="$PUSH_WORKER_PID"
+        PUSH_WORKER_PID=""
+        kill "$KILL_WORKER_PID" || true
+        sleep 10
+        # still not restarted? kill harder
+        if [ -z "$PUSH_WORKER_PID" ]; then
+            kill -9 "$KILL_WORKER_PID" || true
+        fi
+    fi
+}
+
 function monitor() {
+    local LAST_QUEUE_SIZE
+    local QUEUE_SIZE
+    LAST_QUEUE_SIZE="$(redis-cli -h "$REDIS_PUSHAPI_PORT_6379_TCP_ADDR" -p "$REDIS_PUSHAPI_PORT_6379_TCP_PORT" --raw LLEN notifications:push-notifications || true)"
     while sleep 10; do
         QUEUE_SIZE="$(redis-cli -h "$REDIS_PUSHAPI_PORT_6379_TCP_ADDR" -p "$REDIS_PUSHAPI_PORT_6379_TCP_PORT" --raw LLEN notifications:push-notifications || true)"
         # NOTE: STATSD_PREFIX ends with a "." (dot character)
         echo "${STATSD_PREFIX}message_queue_length:$QUEUE_SIZE|g" | nc -w 1 -u "$STATSD_HOST" "$STATSD_PORT" || true
         if [ ! -z "$QUEUE_SIZE" ]; then
             if [ "$QUEUE_SIZE" -gt "100" ] && [ "$QUEUE_SIZE" -gt "$LAST_QUEUE_SIZE" ]; then
-                if [ ! -z "$PUSH_WORKER_PID" ]; then
-                    kill "$PUSH_WORKER_PID" || true
-                    PUSH_WORKER_PID=""
-                fi
+                stop_worker &
             fi
             LAST_QUEUE_SIZE="$QUEUE_SIZE"
         fi
@@ -47,10 +67,6 @@ monitor &
 # This is cheap autoscaling.
 while true; do
     date -u +"[%Y-%m-%dT%H:%M:%SZ]"
-    # echo ./node_modules/.bin/coffee src/push-api/sender-cli.coffee
-    ./node_modules/.bin/coffee src/push-api/sender-cli.coffee &
-    PUSH_WORKER_PID="$!"
-    wait "$PUSH_WORKER_PID"
-    PUSH_WORKER_PID=""
+    run_worker
     sleep "$WORKER_INTERVAL"
 done
