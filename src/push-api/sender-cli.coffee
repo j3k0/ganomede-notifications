@@ -44,7 +44,7 @@ class Producer extends stream.Readable
   _read: (size) ->
     @_getTask (err, task) =>
       if (err)
-        @emit('erorr', err)
+        @emit('error', err)
 
       @push(task)
 
