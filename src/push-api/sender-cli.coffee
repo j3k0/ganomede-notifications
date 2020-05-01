@@ -117,21 +117,22 @@ main = (testing) ->
     client.quit()
     client.once 'end', () ->
       quitters.redis = true
+      tryToExit()
+      
+  tryToExit: () ->
+    debug({quitters:quitters}, 'trying to exit')
+    if (quitters.redis && quitters.apn)
+      process.exit(0)
+    else
+      # Redis usually shuts down nicely, but APN might need some time,
+      # give it that, and force exit if it won't play nicely.
+      setTimeout () ->
+        debug({quitters:quitters}, 'forced exit')
+        process.exit(0)
+      , 10000
 
   # all the tasks are enqueued to be sent or sent
   consumer.on 'finish', () ->
-    # Redis usually shuts down nicely, but APN might need some time,
-    # give it that, and force exit if it won't play nicely.
-    forceExitTimeout = setTimeout () ->
-      debug({quitters:quitters}, 'forced exit')
-      process.exit(0)
-    , 2000
-
-    tryToExit = () ->
-      debug({quitters:quitters}, 'trying to exit')
-      if (quitters.redis && quitters.apn)
-        return clearTimeout(forceExitTimeout)
-
     apnSender.close () ->
       quitters.apn = true
       tryToExit()
