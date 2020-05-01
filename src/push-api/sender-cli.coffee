@@ -17,7 +17,7 @@ Queue = require './queue'
 log = (require '../log').child(SenderCli:true)
 
 debug = if !config.debug then () -> else () ->
-  log.debug.apply(log, arguments)
+  log.info.apply(log, arguments)
 
 class Producer extends stream.Readable
   constructor: (@queue) ->
@@ -35,7 +35,7 @@ class Producer extends stream.Readable
         return process.nextTick(@_getTask.bind(@, callback))
 
       if task
-        debug('read', id:task.notification.id)
+        debug({id:task.notification.id}, 'read')
       else
         debug('queue is empty')
 
@@ -60,17 +60,17 @@ class Consumer extends stream.Writable
 
     @sender.on Sender.events.PROCESSED, (senderType, notifId, token) =>
       @state.finished += 1
-      debug("#{senderType} processed #{notifId} for #{token}", @state)
+      debug({state:@state}, "#{senderType} processed #{notifId} for #{token}")
 
       canQueueMore = @state.queued - @state.finished <= @state.maxDiff
       if canQueueMore
-        debug('can queue more', @state)
+        debug({state:@state}, 'can queue more')
         fn = @state.processedCallbacks.pop()
         if fn
           fn()
 
-    # @sender.on Sender.events.SUCCESS, (senderType, info) ->
-    #   debug("#{senderType} succeeded", info)
+    #@sender.on Sender.events.SUCCESS, (senderType, info) ->
+    #  debug({info:info}, "#{senderType} succeeded")
 
     @sender.on Sender.events.FAILURE, (senderType, err, notifId, token) ->
       log.error({err: err},
@@ -79,7 +79,7 @@ class Consumer extends stream.Writable
   _write: (task, encoding, processed) ->
     @state.queued += task.tokens.length
     @state.processedCallbacks.push(processed)
-    debug('written', id:task.notification.id, @state)
+    debug({id:task.notification.id, state:@state}, 'written')
     @sender.send task
 
 main = (testing) ->
@@ -123,12 +123,12 @@ main = (testing) ->
     # Redis usually shuts down nicely, but APN might need some time,
     # give it that, and force exit if it won't play nicely.
     forceExitTimeout = setTimeout () ->
-      debug('forced exit', quitters)
+      debug({quitters:quitters}, 'forced exit')
       process.exit(0)
     , 2000
 
     tryToExit = () ->
-      debug('trying to exit', quitters)
+      debug({quitters:quitters}, 'trying to exit')
       if (quitters.redis && quitters.apn)
         return clearTimeout(forceExitTimeout)
 
