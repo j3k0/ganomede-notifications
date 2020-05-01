@@ -60,6 +60,7 @@ class Consumer extends stream.Writable
 
     @sender.on Sender.events.PROCESSED, (senderType, notifId, token) =>
       @state.finished += 1
+      log.info("#{senderType} processed #{notifId} for #{token}")
       debug({state:@state}, "#{senderType} processed #{notifId} for #{token}")
 
       canQueueMore = @state.queued - @state.finished <= @state.maxDiff
@@ -111,15 +112,8 @@ main = (testing) ->
   quitters =
     redis: false
     apn: false
-
-  # redis queue is empty
-  producer.on 'end', () ->
-    client.quit()
-    client.once 'end', () ->
-      quitters.redis = true
-      tryToExit()
       
-  tryToExit: () ->
+  tryToExit = () ->
     debug({quitters:quitters}, 'trying to exit')
     if (quitters.redis && quitters.apn)
       process.exit(0)
@@ -130,6 +124,13 @@ main = (testing) ->
         debug({quitters:quitters}, 'forced exit')
         process.exit(0)
       , 10000
+
+  # redis queue is empty
+  producer.on 'end', () ->
+    client.quit()
+    client.once 'end', () ->
+      quitters.redis = true
+      tryToExit()
 
   # all the tasks are enqueued to be sent or sent
   consumer.on 'finish', () ->
