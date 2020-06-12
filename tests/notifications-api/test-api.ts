@@ -33,7 +33,8 @@ describe("Notifications API", function() {
   let authdb = fakeAuthdb.createClient();
   let queue = new Queue(redis, {maxSize: config.redis.queueSize});
   let longPoll = new LongPoll(LP_MILLIS);
-  const addPushNotification = sinon.spy();
+  let onUserRequestSpy = sinon.spy();
+  let addPushNotification = sinon.spy();
   let pubsub = new PubSub({
     publisher: redis,
     subscriber: fakeRedis.createClient(redisId),
@@ -43,6 +44,12 @@ describe("Notifications API", function() {
   beforeEach(function(done) {
     const redisId = '' + Math.random() + '' + Math.random();
     redis = fakeRedis.createClient(redisId);
+    onUserRequestSpy = sinon.spy();
+    const onUserRequest = function(username:string, cb:Function) {
+      onUserRequestSpy(username);
+      cb();
+    };
+    addPushNotification = sinon.spy();
     pubsub = new PubSub({
       publisher: redis,
       subscriber: fakeRedis.createClient(redisId),
@@ -62,6 +69,7 @@ describe("Notifications API", function() {
       pubsub,
       queue,
       longPoll,
+      onUserRequest,
       addPushNotification
     });
 
@@ -201,6 +209,16 @@ describe("Notifications API", function() {
     it('replies HTTP 401 to invalid API_SECRET auth', done => { go()
       .get(endpoint(`/auth/invalid-${config.secret}.alice/messages`))
       .expect(401, done); });
+
+    it('notifies of the user request', done => {
+      go()
+        .get(endpoint(`/auth/${samples.users.alice.token}/messages`))
+        .end(function(_err, _res) {
+          expect(onUserRequestSpy.calledOnce).to.be(true);
+          expect(onUserRequestSpy.firstCall.args).to.eql(["alice"]);
+          done();
+        });
+    });
   });
 });
 

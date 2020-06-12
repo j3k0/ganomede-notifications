@@ -213,6 +213,21 @@ The list is trimmed at `ONLINE_LIST_SIZE` most recent users.
       "bob"
     ]
 
+# Last seen [/notifications/v1//lastseen/bob:usernames]
+
+Last time users have fetched their messages.
+
+## Retrieve [GET]
+
+Example: `GET /notifications/v1/lastseen/alice,bob,carmen`
+
+### response [200] OK
+
+    {
+      "alice": "2020-04-12T13:55:12.012Z",
+      "bob": "2017-01-12T13:55:12.012Z"
+    }
+
 # Push Notifications API
 
 ## Save Push Token [POST /auth/:authToken/push-token]

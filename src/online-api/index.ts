@@ -6,27 +6,35 @@ import * as restifyErrors from "restify-errors";
 import ListManager from './list-manager';
 import config from '../../config';
 import logMod from '../log';
+import { LastSeenClient, LastSeen } from './last-seen';
 const log = logMod.child({module: "online-api"});
 
 export interface OnlineApiOptions {
-  onlineList?: ListManager|any;
+  onlineList?: ListManager;
+  lastSeen?: LastSeenClient;
   authdbClient?: any;
 };
 
 const createApi = function(options?:OnlineApiOptions) {
   if (options == null) { options = {}; }
-  const onlineList = options.onlineList || new ListManager(
+  const onlineList: ListManager = options.onlineList || new ListManager(
     redis.createClient(
       config.onlineList.redisPort,
       config.onlineList.redisHost,
-      {no_ready_check: true}
-    ),
-
+      {no_ready_check: true}),
     {
       maxSize: config.onlineList.maxSize,
       invisibleUsernameRegExp: config.onlineList.invisibleUsernameRegExp
     }
   );
+
+  const lastSeen: LastSeenClient = options.lastSeen || new LastSeenClient({
+    redis: redis.createClient(
+      config.onlineList.redisPort,
+      config.onlineList.redisHost,
+      {no_ready_check: true}
+    )
+  });
 
   // Populates req.params.user with value returned from authDb.getAccount()
   const authMiddleware = authdbHelper.create({
@@ -67,7 +75,7 @@ const createApi = function(options?:OnlineApiOptions) {
     });
   };
 
-  return function(prefix:string, server:restify.Server) {
+  const setup = function(prefix:string, server:restify.Server) {
     if (prefix.length > 0 && prefix[0] !== '/') prefix = '/' + prefix;
     log.info('setup online api:', prefix);
     // Fetch lists
@@ -77,8 +85,25 @@ const createApi = function(options?:OnlineApiOptions) {
     // Update lists
     const updateStack = [authMiddleware, updateList];
     server.post(`${prefix}/auth/:authToken/online`, updateStack);
-    return server.post(`${prefix}/auth/:authToken/online/:listId`, updateStack);
+    server.post(`${prefix}/auth/:authToken/online/:listId`, updateStack);
+
+    // Retrieve user last seen date
+    server.get(`${prefix}/lastseen/:usernames`, function(req:restify.Request, res:restify.Response, next:restify.Next) {
+      const usernames = req.params.usernames;
+      lastSeen.load(usernames.split(','), function(err: Error|null, reply: LastSeen|null): void {
+        if (err) return next(err);
+        res.json(reply);
+        next();
+      });
+    });
   };
+
+  setup.onUserRequest = function(username:string, callback:()=>void) {
+    // store the last request time to redis
+    lastSeen.save(username, new Date(), callback);
+  };
+
+  return setup;
 };
 
 export default createApi;

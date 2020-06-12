@@ -29,7 +29,8 @@ const addRoutes = function(prefix, server) {
 
   // Notifications
   const api = notificationsApi({
-    addPushNotification: pushApi.addPushNotification
+    addPushNotification: pushApi.addPushNotification,
+    onUserRequest: onlineApi.onUserRequest,
   });
   return api(prefix, server);
 };

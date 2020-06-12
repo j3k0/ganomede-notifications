@@ -31,6 +31,7 @@ const sendShortError = function(err, next, type) {
 export interface NotificationsApiOptions {
   authdbClient?: AuthDBClient;
   addPushNotification?: (message:Notification) => void;
+  onUserRequest?: (username:string, cb:()=>void) => void;
   pubsub?: PubSub;
   queue?: Queue;
   longPoll?: LongPoll;
@@ -51,9 +52,14 @@ const notificationsApi = function(options?: NotificationsApiOptions) {
   // This function is called with `message` to be sent in it.
   // It is meant to store message into redis queue that holds push notifications
   // to be sent out.
-  let addPushNotification = options.addPushNotification || function(_msg:Notification) {};
+  const addPushNotification = options.addPushNotification || function(_msg:Notification) {};
   if (!options.addPushNotification) {
     log.warn(`No options.addPushNotification() function provided to notificationsApi(). It will be noop()`);
+  }
+
+  const onUserRequest = options.onUserRequest || function(_username:string, cb:()=>void) { cb(); }
+  const userRequestMiddleware = function(req:restify.Request, res:restify.Response, next:restify.Next) {
+    onUserRequest(req.params.user.username, next);
   }
 
   // notificatinos redis pub/sub
@@ -203,7 +209,10 @@ const notificationsApi = function(options?: NotificationsApiOptions) {
     if (prefix.length > 0 && prefix[0] !== '/') prefix = '/' + prefix;
     log.info('setup notifications api:', prefix);
     server.get(`${prefix}/auth/:authToken/messages`,
-      authMiddleware, getMessages, longPollMiddleware);
+      authMiddleware,
+      userRequestMiddleware,
+      getMessages,
+      longPollMiddleware);
     server.post(`${prefix}/messages`, apiSecretMiddleware, postMessage);
   };
 };
