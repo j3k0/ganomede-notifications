@@ -6,9 +6,8 @@ app:
      - ./src:/home/app/code/src
      - ./tests:/home/app/code/tests
      - ./doc:/home/app/code/doc
-    command: node index.js
     ports:
-     - "8000:8000"
+     - "8431:8000"
     links:
      - redisAuth:redis_auth
      - redisNotifications:redis_notifications
@@ -20,21 +19,10 @@ app:
      - "ONLINE_LIST_SIZE=50"
 
 redisAuth:
-    image: tutum/redis:latest
-    environment:
-     - "REDIS_PASS=**None**"
-
+    image: redis:alpine
 redisNotifications:
-    image: tutum/redis:latest
-    environment:
-     - "REDIS_PASS=**None**"
-
+    image: redis:alpine
 redisOnlineList:
-    image: tutum/redis:latest
-    environment:
-     - "REDIS_PASS=**None**"
-
+    image: redis:alpine
 redisPush:
-    image: tutum/redis:latest
-    environment:
-     - "REDIS_PASS=**None**"
+    image: redis:alpine

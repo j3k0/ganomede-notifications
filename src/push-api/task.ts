@@ -1,6 +1,5 @@
 import * as apn from 'apn';
 import * as gcm from 'node-gcm';
-import Token from './token';
 import config from '../../config';
 import log from '../log';
 import {Notification, NotificationPush} from '../types';

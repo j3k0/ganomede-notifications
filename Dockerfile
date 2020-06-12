@@ -14,19 +14,22 @@ RUN apt-get update && apt-get install -y \
 RUN useradd app -d /home/app
 
 # Install NPM packages
+COPY tsconfig.json /home/app/code/tsconfig.json
 COPY package.json /home/app/code/package.json
+COPY package-lock.json /home/app/code/package-lock.json
 WORKDIR /home/app/code
 RUN npm install
 
 # Copy app source files
-COPY config.js index.js newrelic.js coffeelint.json .eslintignore .eslintrc push-worker.sh /home/app/code/
-COPY index.js /home/app/code/index.js
-COPY index.fix.js /home/app/code/index.fix.js
+COPY config.ts index.ts push-worker.sh /home/app/code/
+COPY index.ts /home/app/code/index.ts
+COPY types /home/app/code/types
 COPY tests /home/app/code/tests
 COPY src /home/app/code/src
+RUN npm run build
 RUN chown -R app /home/app
 
 USER app
-CMD node index.js
+CMD npm start
 
 ENV NODE_ENV=production
