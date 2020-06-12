@@ -6,48 +6,70 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "make test"
+    "start": "node build/index.js",
+    "test": "API_SECRET=1 ts-mocha -p tsconfig.json -u tdd --timeout 999999 --colors tests/**/test-*.ts | bunyan -o short --color",
+    "test-": "API_SECRET=1 ts-mocha tests/**/test-queue.ts",
+    "testw": "API_SECRET=1 ts-mocha --watch tests/**/test-*.ts | bunyan -o short --color",
+    "build": "tsc",
+    "buildw": "tsc -w"
   },
   "author": "Jean-Christophe Hoelt <hoelt@fovea.cc>",
   "license": "Private",
   "dependencies": {
     "apn": "^1.7.8",
     "authdb": "^0.3.0",
-    "blanket": "^1.1.6",
     "bunyan": "^1.2.3",
-    "coffee-script": "^1.8.0",
-    "coffeelint": "^1.6.1",
     "concat-stream": "^1.4.7",
     "eslint": "^0.10.0",
     "forever": "^0.14.2",
     "ganomede": "^0.2.0",
-    "ganomede-helpers": "^1.0.1",
     "jshint": "^2.5.10",
     "lodash": "^3.10.1",
-    "mocha": "^2.0.1",
     "newrelic": "^1.37.2",
     "node-fetch": "^2.6.0",
     "node-gcm": "^1.0.2",
     "node-statsd": "^0.1.1",
-    "redis": "^2.6.2",
-    "restify": "^4.3.4",
+    "redis": "^3.0.2",
+    "restify": "^8.5.1",
+    "restify-errors": "^8.0.2",
     "vasync": "^1.6.2"
   },
-  "config": {
-    "blanket": {
-      "pattern": [
-        "src"
-      ],
-      "data-cover-never": "node_modules",
-      "loader": "./node-loaders/coffee-script"
-    }
-  },
   "devDependencies": {
+    "@types/bunyan": "^1.8.6",
+    "@types/expect": "^24.3.0",
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^14.0.11",
+    "@types/redis": "^2.8.22",
+    "@types/restify": "^8.4.2",
+    "@types/restify-errors": "^4.3.3",
+    "@types/supertest": "^2.0.9",
     "async": "^2.1.2",
     "expect.js": "^0.3.1",
-    "fakeredis": "^0.3.0",
+    "fakeredis": "^0.3.4",
+    "mocha": "^6.2.3",
     "sinon": "^1.15.4",
-    "supertest": "^0.15.0"
+    "supertest": "^4.0.2",
+    "ts-mocha": "^7.0.0",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.5"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "moduleFileExtensions": [
+      "js",
+      "ts"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": "ts-jest"
+    },
+    "globals": {
+      "ts-jest": {
+        "tsConfig": "tsconfig.json"
+      }
+    },
+    "testMatch": [
+      "**/test-*.ts"
+    ]
   }
 }

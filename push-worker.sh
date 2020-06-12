@@ -23,7 +23,7 @@ fi
 
 PUSH_WORKER_PID=
 function run_worker() {
-    ./node_modules/.bin/coffee src/push-api/sender-cli.coffee &
+    node build/src/push-api/sender-cli &
     PUSH_WORKER_PID="$!"
     wait "$PUSH_WORKER_PID"
     PUSH_WORKER_PID=""

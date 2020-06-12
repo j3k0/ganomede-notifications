@@ -1,23 +1,19 @@
 BUNYAN_LEVEL?=1000
 
-MOCHA_FLAGS=--bail \
-	--recursive \
-	--require index.fix.js \
-	--compilers coffee:coffee-script/register
+MOCHA_FLAGS=--bail --recursive --color --require ts-node/register --extensions ts
 
 all: install test
 
 check: install
 	shellcheck -s bash push-worker.sh
-	./node_modules/.bin/eslint --config ./.eslintrc index.js index.fix.js config.js newrelic.js
-	./node_modules/.bin/coffeelint -q src tests
+	tsc
 	grep -R -n -A5 -i TODO src tests
 
 test: check
-	API_SECRET=1 ./node_modules/.bin/mocha ${MOCHA_FLAGS}  tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
+	API_SECRET=1 npx mocha ${MOCHA_FLAGS} tests/**/test-*.ts | npx bunyan -l ${BUNYAN_LEVEL}
 
 testw:
-	API_SECRET=1 ./node_modules/.bin/mocha --watch ${MOCHA_FLAGS}  tests | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
+	API_SECRET=1 npx mocha --watch ${MOCHA_FLAGS} tests/**/test-*.ts | npx bunyan -l ${BUNYAN_LEVEL}
 
 coverage: test
 	@mkdir -p doc
@@ -25,13 +21,13 @@ coverage: test
 	@echo "coverage exported to doc/coverage.html"
 
 run: check
-	node index.js | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
+	node build/index.js | npx bunyan -l ${BUNYAN_LEVEL}
 
 run-worker: check
-	./node_modules/.bin/coffee src/push-api/sender-cli.coffee | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
+	node build/src/push-api/sender-cli | npx bunyan -l ${BUNYAN_LEVEL}
 
 run-worker-loop: check
-	./push-worker.sh | ./node_modules/.bin/bunyan -l ${BUNYAN_LEVEL}
+	./push-worker.sh | npx bunyan -l ${BUNYAN_LEVEL}
 
 install: node_modules
 
