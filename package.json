@@ -1,6 +1,6 @@
 {
   "name": "notifications",
-  "version": "1.8.19",
+  "version": "2.0.0",
   "api": "notifications/v1",
   "description": "notifications micro service",
   "private": true,
