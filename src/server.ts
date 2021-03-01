@@ -52,7 +52,8 @@ export default {
       restify.plugins.auditLogger({event: 'after', log: logger, body: true})));
 
     // Automatically add a request-id to the response
-    function setRequestId(req, res, next) {
+    function setRequestId(req: restify.Request, res: restify.Response, next: restify.Next) {
+      (req as any)._id = req.header('X-Request-Id')?.length >= 32 ? req.header('X-Request-Id') : req.id();
       req.log = req.log.child({req_id: req.id()});
       res.setHeader('X-Request-Id', req.id());
       return next();
