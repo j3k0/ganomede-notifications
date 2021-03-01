@@ -16,7 +16,7 @@ RUN useradd app -d /home/app
 # Install NPM packages
 COPY tsconfig.json /home/app/code/tsconfig.json
 COPY package.json /home/app/code/package.json
-COPY package-lock.json /home/app/code/package-lock.json
+# COPY package-lock.json /home/app/code/package-lock.json
 WORKDIR /home/app/code
 RUN npm install
 
