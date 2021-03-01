@@ -4,12 +4,19 @@ import config from '../../config';
 import log from '../log';
 import {Notification, NotificationPush} from '../types';
 import { Message } from './queue';
+import Token, { TokenType } from './token';
 
-class Task {
+if (!config.pushApi.apn.topic) throw new Error('Environment var APN_TOPIC is not set (iOS bundle ID)');
+const apnTopic:string = config.pushApi.apn.topic;
+
+export class Task {
 
   notification:Notification;
-  tokens:any;
-  converted:any;
+  tokens:Token[];
+  converted:{
+    apn?: apn.Notification;
+    gcm?: gcm.Message;
+  };
 
   constructor(notification:Notification, tokens) {
     this.notification = notification;
@@ -26,7 +33,9 @@ class Task {
     this.converted = {};
   }
 
-  convert(type) {
+  convert(type:'apn'):apn.Notification;
+  convert(type:'gcm'):gcm.Message;
+  convert(type:TokenType):apn.Notification|gcm.Message {
     if (!this.converted.hasOwnProperty(type)) {
       if (!Task.converters.hasOwnProperty(type)) {
         throw new Error(`${type} convertion not supported`);
@@ -54,10 +63,11 @@ class Task {
         push: notification.push
       };
       note.alert = apnAlert(notification.push);
+      note.topic = apnTopic;
       return note;
     },
 
-    gcm: function(notification:Notification) {
+    gcm: function(notification:Notification):gcm.Message {
       return new gcm.Message({
         data: {
           notificationId: notification.id, // for easier debug prints
@@ -75,10 +85,11 @@ class Task {
   };
 }
 
-export function apnAlert(push) {
+export function apnAlert(push):string|apn.NotificationAlertOptions {
   const localized = Array.isArray(push.title) && Array.isArray(push.message);
   if (localized) {
     return {
+      body: push.message[0],
       'title-loc-key': push.title[0],
       'title-loc-args': push.title.slice(1),
       'loc-key': push.message[0],

@@ -115,7 +115,7 @@ class Queue {
       log.info({notification}, 'Sending notification');
     //}
 
-    this.tokenStorage.get(notification.to, notification.push?.app, function(err, tokens) {
+    this.tokenStorage.get(notification.to, notification.push?.app || '', function(err, tokens) {
       // token data:
       // tokens: [{
       // "key": "notifications:push-tokens:data-v2:kago042:triominos/v1",
@@ -140,7 +140,7 @@ class Queue {
       // }
 
 
-      if (tokens.length > 0) {
+      if (tokens!.length > 0) {
         translate(notification, function(translated: Message) {
           if (translated.title && translated.message) {
             notification.translated = translated;

@@ -4,6 +4,8 @@ import * as vasync from 'vasync';
 import config from '../../config';
 import redisMod from 'redis';
 
+export type TokenCallback = (err:Error|null|undefined, tokens?:Token[]) => void;
+
 // Within redis hash we have
 //  #{type:device}: value
 const toHashSubkey = token => `${token.type}:${token.device}`;
@@ -19,20 +21,20 @@ const fromHashSubkey = function(subkey, value) {
 class TokenStorage {
   redis:RedisClient;
 
-  constructor(redis) {
+  constructor(redis:RedisClient) {
     this.redis = redis;
   }
 
   // Adds token to redis.
   // callback(err, added)
-  add(token, callback) {
+  add(token:Token, callback) {
     return this.redis.hset(token.key, toHashSubkey(token), token.value, (err, reply) => // 1 for adding
     // 0 for updating
     callback(err, reply === 1));
   }
 
   // Retrieves username's tokens for particular app
-  get(username, app, callback) {
+  get(username:string, app:string, callback:TokenCallback) {
     const key = Token.key(username, app);
 
     return this.redis.hgetall(key, function(err, tokens) {

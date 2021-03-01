@@ -121,7 +121,7 @@ const main = function(testing) {
   });
 
   gcmSender = new Sender.GcmSender(
-    config.pushApi.gcm.apiKey
+    config.pushApi.gcm.apiKey || ''
   );
 
   const senders:Senders = {

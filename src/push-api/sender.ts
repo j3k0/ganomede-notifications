@@ -1,32 +1,40 @@
 import * as apn from 'apn';
 import * as gcm from 'node-gcm';
 import * as events from 'events';
-import Token from './token';
+import Token, { TokenType } from './token';
 import config from '../../config';
 import logMod from '../log';
 import {Logger} from '../log';
+import Task from './task';
 const log:Logger = logMod.child({sender:true});
+
+export class ApnSenderOptions {
+  production?:boolean;
+  cert?: string;
+  key?: string;
+  buffersNotifications?: boolean;
+  maxConnections?: number;
+}
 
 // TODO
 // listen for errors:
 // https://github.com/argon/node-apn/blob/master/doc/connection.markdown
-class ApnSender {
-  connection: apn.Connection;
+export class ApnSender {
+  connection: apn.Provider;
   log: Logger;
 
-  constructor(options) {
+  constructor(options:ApnSenderOptions) {
     options.production = options.production || !config.debug;
-    this.connection = new apn.Connection(options);
+    this.connection = new apn.Provider(options);
     this.log = log.child({apn:true});
   }
 
-  send(notification, tokens) {
+  send(notification:apn.Notification, tokens:string[]) {
     this.log.info({
       id: notification.payload.id,
       to: notification.payload.to
     }, "sending APN");
-    const devices = tokens.map(token => new apn.Device(token.data()));
-    return this.connection.pushNotification(notification, devices);
+    return this.connection.send(notification, tokens);
   }
 
   close(cb) {
@@ -35,16 +43,16 @@ class ApnSender {
   }
 }
 
-class GcmSender extends events.EventEmitter {
+export class GcmSender extends events.EventEmitter {
   gcm:gcm.Sender;
   log:Logger;
-  constructor(apiKey) {
+  constructor(apiKey:string) {
     super();
     this.gcm = new gcm.Sender(apiKey);
     this.log = log.child({gcm: true});
   }
 
-  _send(message, ids) {
+  _send(message:gcm.Message, ids:string[]) {
     return this.gcm.sendNoRetry(message,
       {registrationTokens: ids},
       (err, result) => {
@@ -58,19 +66,28 @@ class GcmSender extends events.EventEmitter {
     });
   }
 
-  send(gcmMessage, tokens) {
+  send(gcmMessage:gcm.Message, tokens:string[]) {
     this.log.info({
       id: gcmMessage.params.data.notificationId,
       to: gcmMessage.params.data.notificationTo
     }, "sending GCM");
-    const registrationIds = tokens.map(token => token.data());
-    return this._send(gcmMessage, registrationIds);
+    // const registrationIds = tokens.map(token => token.data());
+    return this._send(gcmMessage, tokens);// registrationIds);
   }
 }
 
 export interface Senders {
   apn: ApnSender;
   gcm: GcmSender;
+}
+
+export interface ApnSenderConverter {
+  converter: () => apn.Notification;
+  sender: ApnSender;
+}
+export interface GcmSenderConverter {
+  converter: () => gcm.Message;
+  sender: GcmSender;
 }
 
 export class Sender extends events.EventEmitter {
@@ -119,25 +136,31 @@ export class Sender extends events.EventEmitter {
   }
 
   // Sends push notification from task.notification for each one of task.tokens.
-  send(task) {
+  send(task:Task) {
     // Group tokens by type
-    const groupedTokens = {};
+    const groupedTokens: {
+      apn?: Token[];
+      gcm?: Token[];
+    } = {};
     task.tokens.forEach(function(token) {
       groupedTokens[token.type] = groupedTokens[token.type] || [];
-      return groupedTokens[token.type].push(token);
+      return groupedTokens[token.type]!.push(token);
     });
 
     // For each token group, invoke appropriate sender
     const sendFunctions:Array<() => void> = [];
-    for (let type of Object.keys(groupedTokens || {})) {
-      const tokens = groupedTokens[type];
-      const sender = this.senders[type];
-      if (!sender) {
+    for (let type of (Object.keys(groupedTokens || {}) as TokenType[])) {
+      const tokens:undefined|Token[] = groupedTokens[type];
+      if (!tokens) continue;
+      if (!this.senders[type])
         throw new Error(`No sender specified for ${type} token type`);
+      const actor:ApnSenderConverter|GcmSenderConverter = {
+        sender: this.senders[type],
+        converter: () => task.convert(type as any)
+      } as any;
+      const fn = () => {
+        actor.sender.send(actor.converter(), tokens.map(t => t.data()));
       }
-
-      const fn = () =>
-        sender.send(task.convert(type), tokens);
       sendFunctions.push(fn);
     }
 

@@ -86,7 +86,8 @@ export default {
       defaultAlert: '\uD83D\uDCE7 \u2709 You have a new message',
       expiry: 3600,
       badge: 1,
-      sound: 'ping.aiff'
+      sound: 'ping.aiff',
+      topic: process.env.APN_TOPIC,
     },
 
     // GCM related

@@ -112,8 +112,8 @@ describe('TokenStorage', function() {
       expect(err).to.be(null);
       expect(tokens).to.be.an(Array);
       expect(tokens).to.have.length(1);
-      expect(tokens.every(t => t instanceof Token)).to.be(true);
-      expect(tokens[0]).to.eql(token);
+      expect(tokens!.every(t => t instanceof Token)).to.be(true);
+      expect(tokens![0]).to.eql(token);
       done();
     }); });
 
@@ -145,15 +145,15 @@ describe('Task', function() {
 
   describe('#convert()', function() {
     it('converts notification according to token.type', function() {
-      const expected = Task.converters[Token.APN](notification);
-      expect(expected).to.eql(task.convert(token.type));
+      const expected = Task.converters.apn(notification);
+      expect(expected).to.eql(task.convert(token.type as 'apn'));
     });
 
     it('doesnt convert same token type twice returning from cache instead',
     () => {
       // Checks that we got exact reference to object inside inner task cache
       // and not new object created by one of the Task.converters
-      expect(task.convert(token.type)).to.be(task.converted[token.type]);
+      expect(task.convert(token.type as 'apn')).to.be(task.converted[token.type]);
     });
 
     it('throws if convertion to token.type is not supported', function() {

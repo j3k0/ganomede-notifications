@@ -22,7 +22,7 @@ describe('Sender.ApnSender', function() {
     const task = new Task(samples.notification(), [token]);
 
     it('sends notifications', function(done) {
-      apnSender.send(task.convert(token.type), task.tokens);
+      apnSender.send(task.convert('apn'), task.tokens.map(t => t.data()));
       apnSender.connection.once('transmissionError', (code, note, device) => done(new Error(`APN Error code=${code}`)));
 
       apnSender.connection.once('completed', () => // Give a chance for error to get back to us
@@ -41,7 +41,7 @@ describe('Sender.GcmSender', function() {
   }
   else {
     it('sends notifications', function(done) {
-      const gcmSender = new Sender.GcmSender(process.env.TEST_GCM_API_KEY);
+      const gcmSender = new Sender.GcmSender(process.env.TEST_GCM_API_KEY || '');
       const token = Token.fromPayload(
         samples.tokenData('gcm', process.env.TEST_GCM_TOKEN)
       );
@@ -64,7 +64,7 @@ describe('Sender.GcmSender', function() {
 
       gcmSender.once(Sender.events.FAILURE, (err, noteId, token) => done(toError(err)));
 
-      gcmSender.send(task.convert(token.type), task.tokens);
+      gcmSender.send(task.convert('gcm'), task.tokens.map(t => t.data()));
     });
   }
 });

@@ -63,8 +63,8 @@ describe('Push API', function() {
             expect(err).to.be(null);
             expect(tokens).to.be.an(Array);
             expect(tokens).to.have.length(1);
-            expect(tokens[0]).to.be.a(Token);
-            expect(tokens[0]).to.eql(token);
+            expect(tokens![0]).to.be.a(Token);
+            expect(tokens![0]).to.eql(token);
             done();
           });
       });
