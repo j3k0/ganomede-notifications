@@ -41,6 +41,9 @@ export default {
       maxParamLength: 1000,
     });
 
+    server.pre(restify.plugins.pre.reqIdHeaders({
+      headers: [ 'X-Request-Id', 'Request-Id' ],
+    }));
     const requestLogger = filteredLogger(false, (req) =>
       req.log.info({req_id: req.id()}, `${req.method} ${req.url}`));
     server.use(requestLogger);
