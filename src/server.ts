@@ -37,7 +37,8 @@ export default {
 
     const server = restify.createServer({
       handleUncaughtExceptions: true,
-      log: logger
+      log: logger,
+      maxParamLength: 1000,
     });
 
     const requestLogger = filteredLogger(false, (req) =>
