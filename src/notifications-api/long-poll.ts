@@ -51,8 +51,13 @@ class LongPoll {
 
   add(key:string, onTrigger:(key:string)=>void, onTimeout:(key:string)=>void) {
     if (this.store.hasOwnProperty(key)) {
-      this.store[key].stop();
-      setTimeout(this.store[key].timeout.bind(this.store[key]), this.millis / 2);
+      // Getting here means the same user listens twice to its stream of events...
+      // He might be connected with the same username on two devices.
+      // Let the first "listened" timeout...
+      // (this legacy code was trying to be smarter than that, but actually results
+      // in some 504 errors when more than half the time already passed)
+      // this.store[key].stop();
+      // setTimeout(this.store[key].timeout.bind(this.store[key]), this.millis / 2);
     }
 
     const triggerFn = this.clearBefore(key, onTrigger.bind(null, key));
@@ -66,6 +71,7 @@ class LongPoll {
   trigger(key:string):void {
     if (this.store.hasOwnProperty(key)) {
       this.store[key].trigger();
+      delete this.store[key];
     }
   }
 }
