@@ -11,8 +11,12 @@ export interface LastSeen {
 function parse(usernames:Array<string>, values:Array<string>): LastSeen {
     const ret: LastSeen = {};
     if (!usernames || !values || usernames.length !== values.length) return ret;
-    for (let i: number = 0; i < usernames.length; ++i)
-        ret[usernames[i]] = new Date(values[i]);
+    for (let i: number = 0; i < usernames.length; ++i) {
+        const date = new Date(values[i]);
+        if (+date > 0) {
+            ret[usernames[i]] = date;
+        }
+    }
     return ret;
 }
 
