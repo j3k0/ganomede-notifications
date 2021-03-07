@@ -38,7 +38,7 @@ export default {
     const server = restify.createServer({
       handleUncaughtExceptions: true,
       log: logger,
-      maxParamLength: 1000,
+      maxParamLength: 2000,
     });
 
     server.pre(restify.plugins.pre.reqIdHeaders({
