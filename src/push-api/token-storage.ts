@@ -12,11 +12,13 @@ export type TokenCallback = (err:Error|null|undefined, tokens?:Token[]) => void;
 const toHashSubkey = token => `${token.type}:${token.device}`;
 const fromHashSubkey = function(subkey, value) {
   const parts = subkey.split(':');
-  return {
-    type: parts[0],
-    device: parts[1],
-    value
-  };
+  const type = parts[0];
+  const device = parts[1];
+  if (type === 'apn' && value?.[0] === '<') {
+    // Fix apn tokens stored as "<a061ebfc 07fbeb65 c98ae6d4 2b5d977c d59813a1 48dc5e23 9c9ef73a 7404161d>"
+    value = value.replace(/[^0-9a-f]/g, '');
+  }
+  return { type, device, value };
 };
 
 class TokenStorage {
@@ -45,7 +47,9 @@ class TokenStorage {
 
       let ret:Array<Token> = [];
       if (tokens) {
-        ret = Object.keys(tokens).map(subkey => new Token(key, fromHashSubkey(subkey, tokens[subkey])));
+        ret = Object.keys(tokens)
+          .filter(subkey => tokens[subkey].slice(0, 10) !== '{length = ') // there's some bad data in the database...
+          .map(subkey => new Token(key, fromHashSubkey(subkey, tokens[subkey])));
       }
 
       return callback(null, ret);
