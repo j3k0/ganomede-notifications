@@ -77,10 +77,14 @@ export class GcmSender extends events.EventEmitter {
   constructor(apiKey:string) {
     super();
     this.gcm = new gcm.Sender(apiKey);
-    this.log = log.child({gcm: true});
+    this.log = logMod.child({gcm: true});
   }
 
   _send(message:gcm.Message, ids:string[]) {
+    this.log.debug({
+      id: message.params.data.notificationId,
+      to: message.params.data.notificationTo
+    }, "gcm._send");
     return this.gcm.sendNoRetry(message,
       {registrationTokens: ids},
       (err, result) => {
@@ -88,19 +92,15 @@ export class GcmSender extends events.EventEmitter {
         const notifId = message.params.data.notificationId;
         return Array.from(ids).map((token) =>
           err ?
-            this.emit(Sender.events.FAILURE, {httpCode: err}, notifId, token)
+            this.emit(Sender.events.FAILURE, {httpCode: err}, notifId, token, message)
           :
-            this.emit(Sender.events.SUCCESS, notifId, token));
+            this.emit(Sender.events.SUCCESS, notifId, token, message));
     });
   }
 
   send(gcmMessage:gcm.Message, tokens:string[]) {
-    this.log.info({
-      id: gcmMessage.params.data.notificationId,
-      to: gcmMessage.params.data.notificationTo
-    }, "sending GCM");
     // const registrationIds = tokens.map(token => token.data());
-    return this._send(gcmMessage, tokens);// registrationIds);
+    this._send(gcmMessage, tokens);// registrationIds);
   }
 }
 
@@ -172,19 +172,25 @@ export class Sender extends events.EventEmitter {
 
     // GCM Events
     // (since it is POST, we can reliably know if notification was accpeted)
-    this.senders[Token.GCM].on(Sender.events.SUCCESS, (notifId, token) => {
+    this.senders[Token.GCM].on(Sender.events.SUCCESS, (notifId, token, message:gcm.Message) => {
+      // logMod.debug({ id: notifId }, 'gcm processed');
+      const to = message.params?.data?.notificationTo || '';
+      logMod.info({ id: notifId, to }, `#${notifId} gcm success > ${to}`);
       this.emit(Sender.events.PROCESSED, Token.GCM, notifId, token);
-      return this.emit(Sender.events.SUCCESS, Token.GCM, notifId, token);
+      this.emit(Sender.events.SUCCESS, Token.GCM, notifId, token);
     });
 
-    this.senders[Token.GCM].on(Sender.events.FAILURE, (error, notifId, token) => {
+    this.senders[Token.GCM].on(Sender.events.FAILURE, (error, notifId, token, message:gcm.Message) => {
+      const to = message.params?.data?.notificationTo || '';
+      logMod.warn({ id: notifId, to, message: message.params }, `#${notifId} gcm failure > ${to}: error ${error?.httpCode}`);
       this.emit(Sender.events.PROCESSED, Token.GCM, notifId, token);
-      return this.emit(Sender.events.FAILURE, Token.GCM, error, notifId, token);
+      this.emit(Sender.events.FAILURE, Token.GCM, error, notifId, token);
     });
   }
 
   // Sends push notification from task.notification for each one of task.tokens.
   send(task:Task) {
+    const log = logMod.child({to: task?.notification?.to, timestamp: task?.notification?.timestamp});
     // Group tokens by type
     const groupedTokens: {
       apn?: Token[];
@@ -194,14 +200,20 @@ export class Sender extends events.EventEmitter {
       groupedTokens[token.type] = groupedTokens[token.type] || [];
       return groupedTokens[token.type]!.push(token);
     });
+    log.debug({ groupedTokens }, 'send(task)');
 
     // For each token group, invoke appropriate sender
     const sendFunctions:Array<() => void> = [];
     for (let type of (Object.keys(groupedTokens || {}) as TokenType[])) {
       const tokens:undefined|Token[] = groupedTokens[type];
-      if (!tokens) continue;
-      if (!this.senders[type])
+      if (!tokens) {
+        log.debug('no tokens for ' + type);
+        continue;
+      }
+      if (!this.senders[type]) {
+        log.warn('no sender for ' + type);
         throw new Error(`No sender specified for ${type} token type`);
+      }
       const actor:ApnSenderConverter|GcmSenderConverter = {
         sender: this.senders[type],
         converter: () => task.convert(type as any)
@@ -213,6 +225,7 @@ export class Sender extends events.EventEmitter {
     }
 
     // Exec those functions
+    log.debug(`executing senders functions (.length=${ sendFunctions.length })`);
     return sendFunctions.forEach(fn => fn());
   }
 }

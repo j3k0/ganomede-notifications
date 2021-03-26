@@ -3,6 +3,7 @@ import { RedisClient } from 'redis';
 import * as vasync from 'vasync';
 import config from '../../config';
 import redisMod from 'redis';
+// import logMod from '../log';
 
 export type TokenCallback = (err:Error|null|undefined, tokens?:Token[]) => void;
 
