@@ -15,7 +15,7 @@
   "author": "Jean-Christophe Hoelt <hoelt@fovea.cc>",
   "license": "Private",
   "dependencies": {
-    "apn": "^2.2.0",
+    "@parse/node-apn": "^4.0.0",
     "authdb": "^0.3.0",
     "bunyan": "^1.2.3",
     "concat-stream": "^1.4.7",

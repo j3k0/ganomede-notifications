@@ -1,4 +1,4 @@
-import * as apn from 'apn';
+import * as apn from '@parse/node-apn';
 import * as gcm from 'node-gcm';
 import config from '../../config';
 import log from '../log';

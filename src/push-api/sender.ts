@@ -1,4 +1,4 @@
-import * as apn from 'apn';
+import * as apn from '@parse/node-apn';
 import * as gcm from 'node-gcm';
 import * as events from 'events';
 import Token, { TokenType } from './token';
