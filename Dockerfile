@@ -1,19 +1,21 @@
-FROM node:12-slim
+FROM node:14-slim
 
 EXPOSE 8000
-MAINTAINER Jean-Christophe Hoelt <hoelt@fovea.cc>
+# MAINTAINER Jean-Christophe Hoelt <hoelt@fovea.cc>
 
 # Install redis-cli and netcat
 # (those are used by push-worker.sh to monitor the queue of messages)
 RUN apt-get update && apt-get install -y \
     redis-tools \
     netcat-traditional \
+    ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
 # Create 'app' user
 RUN useradd app -d /home/app
 
 # Install NPM packages
+COPY certs/AAACertificateServices.crt /etc/ssl/certs/
 COPY tsconfig.json /home/app/code/tsconfig.json
 COPY package.json /home/app/code/package.json
 # COPY package-lock.json /home/app/code/package-lock.json
