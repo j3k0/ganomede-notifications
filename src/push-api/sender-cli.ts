@@ -9,7 +9,10 @@ import TokenStorage from './token-storage';
 import { Sender, Senders } from './sender';
 import Queue from './queue';
 import logMod from '../log';
+import { Task } from './task';
+import statsMod from '../statsd-wrapper';
 const log = logMod.child({SenderCli:true});
+const stats = statsMod.createClient();
 
 class Producer extends stream.Readable {
   
@@ -100,16 +103,22 @@ class Consumer extends stream.Writable {
 
     //@sender.on Sender.events.SUCCESS, (senderType, info) ->
     //  debug({info:info}, "#{senderType} succeeded")
+    this.sender.on(Sender.events.SUCCESS, (senderType) => {
+      stats.increment(senderType + '.success');
+    });
 
-    this.sender.on(Sender.events.FAILURE, (senderType, err, notifId, token) => log.error({err},
-      `${senderType} failed to send ${notifId} for ${token}`));
+    this.sender.on(Sender.events.FAILURE, (senderType) => {
+      // error are already logged by each sender.
+      // log.warn({ type: senderType, id: notifId, token, err }, `notification failed`);
+      stats.increment(senderType + '.failure');
+    });
   }
 
   _write(task, encoding, processed) {
     this.state.queued += task.tokens.length;
     this.state.processedCallbacks.push(processed);
     log.debug({id:task.notification.id, state:this.state}, 'written');
-    return this.sender.send(task);
+    this.sender.send(task);
   }
 }
 

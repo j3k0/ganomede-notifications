@@ -31,7 +31,7 @@ const createClient = function(...args) {
   const client = new StatsD({
     host: process.env.STATSD_HOST,
     port: process.env.STATSD_PORT,
-    prefix: process.env.STATSD_PREFIX || 'ganomede.users.'
+    prefix: process.env.STATSD_PREFIX || 'ganomede.notifications.'
   });
   client.socket.on('error', error => log.error("error in socket", error));
   return client;
