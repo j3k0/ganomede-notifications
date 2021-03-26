@@ -6,6 +6,7 @@ EXPOSE 8000
 # Install redis-cli and netcat
 # (those are used by push-worker.sh to monitor the queue of messages)
 RUN apt-get update && apt-get install -y \
+    redis-server \
     redis-tools \
     netcat-traditional \
     ca-certificates \

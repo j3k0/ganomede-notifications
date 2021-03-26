@@ -3,6 +3,19 @@
 set -e
 cd "$(dirname "$0")"
 
+# Start a local redis server for caching
+cat << EOF > /tmp/redis.conf
+appendonly no
+save ""
+maxmemory 50mb
+maxmemory-policy allkeys-random
+EOF
+redis-server /tmp/redis.conf &
+REDIS_SERVER_PID="$!"
+
+export REDIS_CACHE_HOST=127.0.0.1
+export REDIS_CACHE_PORT=6379
+
 TEMPDIR="$(mktemp -d)"
 
 if [[ ! -z "$APN_KEY_BASE64" ]]; then
@@ -70,3 +83,5 @@ while true; do
     run_worker
     sleep "$WORKER_INTERVAL"
 done
+
+kill -SIGINT "$REDIS_SERVER_PID" || true

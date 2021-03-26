@@ -1,20 +1,21 @@
 import * as fetch from 'node-fetch';
-
 import config from '../../config';
 import logMod from '../log';
+import Cache from './cache';
+
 const log = logMod.child({module: "user-locale"});
 
 const usermetaURL = config.usermeta.url;
 
-const fetchUsermetas = function(username, callback) {
-  username = encodeURIComponent(username);
-  return fetch(`${usermetaURL}/${username}/location,locale`)
+const fetchUsermetas = function(userId, callback) {
+  userId = encodeURIComponent(userId);
+  return fetch(`${usermetaURL}/${userId}/location,locale`)
   .then(res => res.json())
   .then(function(json) {
-    if (username === 'kago042') {
-      log.info({ json, username }, 'Metadata fetched');
+    if (userId === 'kago042') {
+      log.info({ json, userId }, 'Metadata fetched');
     }
-    return callback(json[username]);})
+    return callback(json[userId]);})
   .catch(err => callback());
 };
 
@@ -46,17 +47,32 @@ const localeFromLocation = function(location?:string):string {
 };
 
 class UserLocale {
-  static fetch(username:string, callback) {
+  static async fetch(userId:string, callback) {
+
+    const cached: string | null = await Cache.get('l:' + userId);
+    if (cached && typeof cached === 'string') {
+      log.debug(`user locale [cached]: ${userId} = "${cached}"`);
+      callback(cached);
+      return;
+    }
+
     fetchUsermetas(
-      username,
+      userId,
       function(data) {
+        let locale:string|undefined = undefined;
         if (!data) {
-          callback('en');
+          locale = 'en';
+          log.debug(`user locale [fetched]: ${userId} = "en" from default`);
         } else if (data.locale) {
-          callback(formatLocale(data.locale));
+          locale = formatLocale(data.locale);
+          if (locale) Cache.set('l:' + userId, locale, 3600);
+          log.debug(`user locale [fetched]: ${userId} = "${locale}"`);
         } else {
-          callback(localeFromLocation(data.location));
+          locale = localeFromLocation(data.location);
+          if (locale) Cache.set('l:' + userId, locale, 3600);
+          log.debug(`user locale [fetched]: ${userId} = "${locale}" from location`);
         }
+        callback(locale);
     });
   }
 }
