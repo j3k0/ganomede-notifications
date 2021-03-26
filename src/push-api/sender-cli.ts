@@ -146,17 +146,16 @@ const main = function(testing) {
     redis: false,
     apn: false
   };
-      
   const tryToExit = function() {
     log.debug({quitters}, 'trying to exit');
     if (quitters.redis && quitters.apn) {
-      return process.exit(0);
+      process.exit(0);
     } else {
       // Redis usually shuts down nicely, but APN might need some time,
       // give it that, and force exit if it won't play nicely.
-      return setTimeout(function() {
+      setTimeout(function() {
         log.debug({quitters}, 'forced exit');
-        return process.exit(0);
+        process.exit(0);
       }
       , 10000);
     }
@@ -166,9 +165,9 @@ const main = function(testing) {
   producer.on('end', function() {
     log.debug('producer.end > redis queue empty');
     client.quit();
-    return client.once('end', function() {
+    client.once('end', function() {
       quitters.redis = true;
-      return tryToExit();
+      tryToExit();
     });
   });
 
@@ -176,7 +175,7 @@ const main = function(testing) {
   consumer.on('finish', () => apnSender.close(function() {
     log.debug('consumer.finish > all the tasks are enqueued');
     quitters.apn = true;
-    return tryToExit();
+    tryToExit();
   }));
 
   // Start callbacking
@@ -219,7 +218,7 @@ const main = function(testing) {
     const multi = client.multi();
     multi.flushdb();
     multi.lpush.apply(multi, args);
-    return multi.exec(function(err) {
+    multi.exec(function(err) {
       if (err) {
         return callback(err);
       }
