@@ -7,16 +7,24 @@ const log = logMod.child({module: "user-locale"});
 
 const usermetaURL = config.usermeta.url;
 
-const fetchUsermetas = function(userId, callback) {
-  userId = encodeURIComponent(userId);
-  return fetch(`${usermetaURL}/${userId}/location,locale`)
+const fetchUsermetas = function(userId:string, callback, maxretries:number) {
+  return fetch(`${usermetaURL}/auth/${config.secret}.${encodeURIComponent(userId)}/location,locale`)
   .then(res => res.json())
   .then(function(json) {
     if (userId === 'kago042') {
       log.info({ json, userId }, 'Metadata fetched');
     }
     return callback(json[userId]);})
-  .catch(err => callback());
+  .catch(err => {
+    if (maxretries > 0) {
+      fetchUsermetas(userId, callback, maxretries - 1);
+      log.warn({ userId, err }, 'failed to fetch usermetas, retrying... ' + err.message);
+    }
+    else {
+      log.info({ userId, err }, 'failed to fetch usermetas, aborting.');
+      callback();
+    }
+  });
 };
 
 const formatLocale = locale => locale.slice(0, 2).toLowerCase();
@@ -73,7 +81,7 @@ class UserLocale {
           log.debug(`user locale [fetched]: ${userId} = "${locale}" from location`);
         }
         callback(locale);
-    });
+    }, 2);
   }
 }
 
