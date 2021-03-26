@@ -21,20 +21,21 @@ class Producer extends stream.Readable {
   }
 
   _getTask(callback) {
-    return this.queue.get((err, task) => {
+    log.debug('Producer._getTask');
+    return this.queue.get((err, task: Task | null) => {
       if (err) {
-        log.error({err}, 'Failed to retrieve task');
+        log.error({err}, 'failed to retrieve task');
         return callback(err, null);
       }
 
       // If no tokens, skip notification, and _getTask() again for a new item.
       if (task && (task.tokens.length === 0)) {
-        log.info({to: task.notification.to}, '[skip] No tokens for user');
+        log.debug({ to: task.notification.to }, `#${task.notification.id} [skip] no tokens for user`);
         return process.nextTick(this._getTask.bind(this, callback));
       }
 
       if (task) {
-        log.debug({id:task.notification.id}, 'read');
+        log.debug({ id: task.notification.id, to: task.notification.to, timestamp: task.notification.timestamp }, 'read');
       } else {
         log.debug('queue is empty');
       }
@@ -44,12 +45,14 @@ class Producer extends stream.Readable {
   }
 
   _read(size) {
-    return this._getTask((err, task) => {
+    log.debug(`Producer._read(${ size })`);
+    this._getTask((err, task: Task | null) => {
       if (err) {
         this.emit('error', err);
       }
 
-      return this.push(task);
+      log.debug({ to: task?.notification?.to, timestamp: task?.notification?.timestamp }, 'push task');
+      this.push(task);
     });
   }
 }
@@ -76,12 +79,18 @@ class Consumer extends stream.Writable {
 
     this.sender.on(Sender.events.PROCESSED, (senderType, notifId, token) => {
       this.state.finished += 1;
-      log.info(`${senderType} processed ${notifId} for ${token}`);
-      log.debug({state:this.state}, `${senderType} processed ${notifId} for ${token}`);
+      log.info({
+        queued: this.state.queued,
+        finished: this.state.finished,
+        type: senderType,
+        id: notifId,
+        token,
+      }, `#${notifId} processed ${ this.state.finished } / ${ this.state.queued }`);
+      // log.debug({ state: this.state }, `${senderType} processed ${notifId} for ${token}`);
 
       const canQueueMore = (this.state.queued - this.state.finished) <= this.state.maxDiff;
       if (canQueueMore) {
-        log.debug({state:this.state}, 'can queue more');
+        log.debug({ state: this.state }, 'can queue more');
         const fn = this.state.processedCallbacks.pop();
         if (fn) {
           return fn();
@@ -155,6 +164,7 @@ const main = function(testing) {
 
   // redis queue is empty
   producer.on('end', function() {
+    log.debug('producer.end > redis queue empty');
     client.quit();
     return client.once('end', function() {
       quitters.redis = true;
@@ -164,6 +174,7 @@ const main = function(testing) {
 
   // all the tasks are enqueued to be sent or sent
   consumer.on('finish', () => apnSender.close(function() {
+    log.debug('consumer.finish > all the tasks are enqueued');
     quitters.apn = true;
     return tryToExit();
   }));
@@ -174,8 +185,8 @@ const main = function(testing) {
       log.error({err}, 'start() called with error');
       return process.exit(1);
     }
-
-    return producer.pipe(consumer);
+    log.debug('start()');
+    producer.pipe(consumer);
   };
 
   // Dump 100 notifications to redis and token for user.

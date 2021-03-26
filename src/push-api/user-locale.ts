@@ -12,7 +12,7 @@ const fetchUsermetas = function(username, callback) {
   .then(res => res.json())
   .then(function(json) {
     if (username === 'kago042') {
-      log.info({json, username}, 'Metadata fetched');
+      log.info({ json, username }, 'Metadata fetched');
     }
     return callback(json[username]);})
   .catch(err => callback());

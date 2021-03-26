@@ -61,7 +61,7 @@ class Translator {
   //   "nipe755"
   // ],
   translate(locale:string, data:Array<string>, argsType:Array<string>, callback:(tr:string)=>void): void {
-    log.info({locale, data}, 'translate');
+    log.debug({ locale, data }, 'translate');
     // TODO: fetch usernames from directory and show the display name
     if (!data || data.length === 0) {
       return callback('');

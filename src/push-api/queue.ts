@@ -2,7 +2,7 @@
 
 import Task from './task';
 import config from '../../config';
-import log from '../log';
+import logMod from '../log';
 import Translator from './translator';
 import UserLocale from './user-locale';
 import { RedisClient } from 'redis';
@@ -30,6 +30,7 @@ class Queue {
   // Add notification to the queue.
   // callback(err)
   add(notification: Notification, callback?: (err: Error|null, newLength: number|null) => void): void {
+    const log = logMod.child({ to: notification?.to, timestamp: notification?.timestamp });
     const json = JSON.stringify(notification);
     this.redis.lpush(config.pushApi.notificationsPrefix, json, function(err: Error|null, newLength: number|null): void {
       if (err) {
@@ -49,10 +50,10 @@ class Queue {
   // If there are notification, retrieve push tokens for them.
   // callback(err, task)
   _rpop(callback: (err:Error|null, notification?:Notification) => void): void {
-    log.info('_rpop');
+    logMod.debug('_rpop');
     this.redis.rpop(config.pushApi.notificationsPrefix, function(err, notificationJson) {
       if (err) {
-        log.error({err}, 'Failed to .rpop push notification');
+        logMod.error({err}, 'Failed to .rpop push notification');
         callback(err);
       }
 
@@ -96,7 +97,8 @@ class Queue {
   //   "id": 1132529133
   // }
   _task(notification: Notification, callback: (err: Error|null, task:Task|null) => void): void {
-    log.info('_task');
+    const log = logMod.child({ to: notification?.to, timestamp: notification?.timestamp });
+    log.debug('_task');
     const now = +new Date();
     const ten_minutes_ago = now - (600 * 1000);
     const tooOld = n => n.timestamp && (n.timestamp < ten_minutes_ago);
@@ -107,13 +109,18 @@ class Queue {
       log.info({
         id: notification.id,
         timestamp: (new Date(notification.timestamp)).toISOString()
-      }, '[skip] notification is too old');
+      }, `#${notification.id} [skip] notification is too old`);
       return callback(null, new Task(notification, []));
     }
 
-    //if (notification.to === 'kago042') {
-      log.info({notification}, 'Sending notification');
-    //}
+    // if (notification.to === 'kago042') {
+    log.debug({
+      from: notification.from,
+      to: notification.to,
+      type: notification.type,
+      push: notification.push
+    }, 'sending...');
+    // }
 
     this.tokenStorage.get(notification.to, notification.push?.app || '', function(err, tokens) {
       // token data:
@@ -136,25 +143,27 @@ class Queue {
       }
 
       // if (notification.to === 'kago042') {
-     log.info({tokens}, 'Tokens for test user');
+      log.debug({ tokens }, 'tokens');
       // }
-
 
       if (tokens!.length > 0) {
         translate(notification, function(translated: Message) {
           if (translated.title && translated.message) {
             notification.translated = translated;
+            log.debug({ translated }, 'notification translated');
             callback(null, new Task(notification, tokens));
           } else {
-            log.info('no translation, skipping');
+            log.info(`#${notification.id} [skip] no translation`);
             callback(null, new Task(notification, []));
           }
         });
       } else {
+        log.info(`#${notification.id} [skip] no tokens`);
         callback(null, new Task(notification, []));
       }
     });
   }
+
   get(callback: (err:Error|null, task:Task|null) => void): void {
     this._rpop((err, notification) => {
       if (err) return callback(err, null);
@@ -171,7 +180,8 @@ export type TranslateCallback = (msg: Message) => void;
 
 var translate = (notification: Notification, callback: TranslateCallback) => UserLocale.fetch(notification.to, function(locale) {
 
-  log.info({locale, username: notification.to}, 'Locale fetched');
+  const log = logMod.child({ to: notification?.to, timestamp: notification?.timestamp });
+  log.debug({ locale, username: notification.to }, 'locale fetched');
   translator.translate(
     locale,
     notification.push?.title || [],

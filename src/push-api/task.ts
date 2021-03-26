@@ -64,6 +64,7 @@ export class Task {
       };
       note.alert = apnAlert(notification.push);
       note.topic = apnTopic;
+      log.debug({ note: { ...note, payload: null } }, 'apn.converted');
       return note;
     },
 

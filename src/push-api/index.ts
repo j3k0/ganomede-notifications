@@ -59,6 +59,9 @@ export default function(options?:PushApiOptions) {
         );
         return next(new restifyErrors.InternalServerError);
       }
+      else {
+        log.info({ token }, 'push-token saved');
+      }
 
       res.send(200);
       return next();
