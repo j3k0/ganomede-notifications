@@ -134,8 +134,8 @@ const main = function(testing) {
   apnSender = new Sender.ApnSender({
     cert: config.pushApi.apn.cert,
     key: config.pushApi.apn.key,
-    buffersNotifications: false,
-    maxConnections: config.pushApi.apn.maxConnections
+    // buffersNotifications: false,
+    // maxConnections: config.pushApi.apn.maxConnections
   });
 
   gcmSender = new Sender.GcmSender(

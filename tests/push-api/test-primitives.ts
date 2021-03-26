@@ -175,7 +175,7 @@ describe('Task', function() {
         const alert = apnAlert;
 
         it('returns localization object when .push has 2 arrays', () => {
-          expect(alert(push)).to.eql({
+          expect(alert(notification)).to.eql({
             'title-loc-key': 'title-loc-key',
             'title-loc-args': [],
             'loc-key': 'message-loc-key',
@@ -184,7 +184,10 @@ describe('Task', function() {
         });
 
         it('returns default string from config in other cases', () => {
-          expect(alert({})).to.be(config.pushApi.apn.defaultAlert);
+          expect(alert({
+            ...notification,
+            push: {} as any
+          })).to.be(config.pushApi.apn.defaultAlert);
         });
       });
     });

@@ -62,7 +62,7 @@ export class Task {
         data: notification.data,
         push: notification.push
       };
-      note.alert = apnAlert(notification.push);
+      note.alert = apnAlert(notification);
       note.topic = apnTopic;
       log.debug({ note: { ...note, payload: null } }, 'apn.converted');
       return note;
@@ -86,9 +86,22 @@ export class Task {
   };
 }
 
-export function apnAlert(push):string|apn.NotificationAlertOptions {
+export function apnAlert(notification: Notification):string|apn.NotificationAlertOptions {
+  const push = notification.push;
+  if (!push) {
+    log.warn({ to: notification.to, timestamp: notification.timestamp }, '[internal error] apn.alert contains no push data');
+    return "";
+  }
   const localized = Array.isArray(push.title) && Array.isArray(push.message);
   if (localized) {
+    // log.info('apn.alert');
+    if (notification.translated && notification.translated.message) {
+      log.debug({ translated: notification.translated }, 'apn.alert is translated');
+      return {
+        title: notification.translated.title,
+        body: notification.translated.message,
+      }
+    }
     return {
       body: push.message[0],
       'title-loc-key': push.title[0],

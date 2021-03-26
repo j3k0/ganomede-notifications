@@ -2,44 +2,72 @@ import * as apn from '@parse/node-apn';
 import * as gcm from 'node-gcm';
 import * as events from 'events';
 import Token, { TokenType } from './token';
-import config from '../../config';
-import logMod from '../log';
+// import config from '../../config';
+import logModI from '../log';
 import {Logger} from '../log';
 import Task from './task';
-const log:Logger = logMod.child({sender:true});
+const logMod:Logger = logModI.child({sender:true});
 
 export class ApnSenderOptions {
   production?:boolean;
   cert?: string;
   key?: string;
-  buffersNotifications?: boolean;
-  maxConnections?: number;
+  // buffersNotifications?: boolean;
+  // maxConnections?: number;
 }
 
-// TODO
-// listen for errors:
-// https://github.com/argon/node-apn/blob/master/doc/connection.markdown
-export class ApnSender {
+export class ApnSender extends events.EventEmitter {
   connection: apn.Provider;
   log: Logger;
 
   constructor(options:ApnSenderOptions) {
-    options.production = options.production || !config.debug;
-    this.connection = new apn.Provider(options);
-    this.log = log.child({apn:true});
+    super();
+    // options.production = true; // options.production || !config.debug;
+    const providerOptions = {
+      ...options,
+      production: true,
+    };
+    this.connection = new apn.Provider(providerOptions);
+    this.log = logModI.child({ apn: true });
+    this.log.info({ providerOptions }, 'apn.initialized');
   }
 
   send(notification:apn.Notification, tokens:string[]) {
-    this.log.info({
+    this.log.debug({
+      tokens,
       id: notification.payload.id,
-      to: notification.payload.to
-    }, "sending APN");
-    return this.connection.send(notification, tokens);
+      to: notification.payload.to,
+      aps: notification.aps,
+    }, "apn.send");
+    if (!notification.aps.alert) {
+      this.log.warn({
+        to: notification.payload.to,
+        notification: {
+          ...notification,
+          payload: null
+        }
+      }, "apn.notification contains no alert!");
+      this.emit(Sender.events.FAILURE, notification, {
+        failed: [{
+          device: tokens[0],
+          error: 'notification contains no alert message',
+        }],
+      });
+      return;
+    }
+    this.connection.send(notification, tokens).then(responses => {
+      this.log.debug({ responses }, "apn.responded");
+      if (responses.sent?.length > 0)
+        this.emit(Sender.events.SUCCESS, notification, responses);
+      else
+        this.emit(Sender.events.FAILURE, notification, responses);
+    });
   }
 
   close(cb) {
+    this.log.info('apn.close');
     this.connection.once('disconnected', cb);
-    return this.connection.shutdown();
+    this.connection.shutdown();
   }
 }
 
@@ -113,13 +141,33 @@ export class Sender extends events.EventEmitter {
     this.senders = senders || {};
 
     // APN events
-    // (no way to know about success)
-    this.senders[Token.APN].connection.on('transmitted', (notification, device) => {
-      return this.emit(Sender.events.PROCESSED, Token.APN, notification.payload.id, device);
+    this.senders[Token.APN].on(Sender.events.SUCCESS, (notification, responses:apn.Responses) => {
+      const sent = responses.sent?.[0];
+      const notifId = notification?.payload?.id;
+      const token = sent?.device;
+      const to = notification?.payload?.to || '';
+      logMod.info({
+        to: notification?.payload?.to,
+        timestamp: notification?.payload?.timestamp
+      }, `#${notifId} apn success > ${to}`);
+      this.emit(Sender.events.PROCESSED, Token.APN, notifId, token);
+      this.emit(Sender.events.SUCCESS, Token.APN, notifId, token);
     });
 
-    this.senders[Token.APN].connection.on('transmissionError', (code, n, device) => {
-      return this.emit(Sender.events.FAILURE, Token.APN, {code}, n.payload.id, device);
+    this.senders[Token.APN].on(Sender.events.FAILURE, (notification, responses:apn.Responses) => {
+      const failed = responses.failed?.[0];
+      const notifId = notification?.payload?.id;
+      const token = failed?.device;
+      const from = notification?.payload?.from || '';
+      const to = notification?.payload?.to || '';
+      const message = responses?.failed?.[0]?.error?.message
+        || responses?.failed?.[0]?.response?.reason
+        || 'unknown error';
+      logMod.warn({ device: token, id: notifId, to, from, responses },
+        `#${notifId} apn failure > ${to}: ${message}`);
+      this.emit(Sender.events.PROCESSED, Token.APN, notifId, token);
+      this.emit(Sender.events.FAILURE, Token.APN, failed, notifId, token);
+      // TODO: Remove invalid tokens from the database.
     });
 
     // GCM Events
